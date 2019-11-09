@@ -25,23 +25,32 @@ struct wkn_server {
 	struct wkn_cursor *cursor;
 	struct wkn_seat *seat;
 	struct wkn_client *focused_client;
-	double focused_offset_x;
-	double focused_offset_y;
-	int focused_width;
-	int focused_height;
-	uint32_t resize_edges;
+	double request_cursor_x;
+	double request_cursor_y;
+	double request_client_x;
+	double request_client_y;
+	double request_client_width;
+	double request_client_height;
+	uint32_t request_resize_edges;
 	struct wl_listener new_output;
 	struct wl_list outputs;
 	struct wl_listener new_surface;
 	struct wl_list clients;
 	struct wl_listener new_input;
 	struct wl_list keyboards;
+	void *png_data;
+	uint32_t png_width;
+	uint32_t png_height;
 };
 
 struct wkn_server *wkn_server_create(void);
 void wkn_server_move_focused_client(struct wkn_server *server);
 void wkn_server_resize_focused_client(struct wkn_server *server);
-struct wkn_client *wkn_server_find_client_at(struct wkn_server *server, double layout_x, double layout_y);
+struct wkn_client *wkn_server_find_client_at(
+	struct wkn_server *server,
+	double layout_x,
+	double layout_y
+);
 void wkn_server_destroy(struct wkn_server *server);
 
 #endif

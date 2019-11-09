@@ -15,8 +15,10 @@ void wkn_client_focus(struct wkn_client *client)
 	if (prev_wlr_surface == client->wlr_xdg_surface->surface)
 		return;
 	if (prev_wlr_surface)
-		wlr_xdg_toplevel_set_activated(wlr_xdg_surface_from_wlr_surface(prev_wlr_surface
-		), false);
+		wlr_xdg_toplevel_set_activated(
+			wlr_xdg_surface_from_wlr_surface(prev_wlr_surface),
+			false
+		);
 	// struct wlr_keyboard *wlr_keyboard = wlr_seat_get_keyboard(seat->wlr_seat);
 	// You are focused! Go to top!
 	wl_list_remove(&client->link);
@@ -41,17 +43,25 @@ static void wkn_client_request(
 	server->cursor->state = cursor_state;
 	struct wlr_box geo_box;
 	wlr_xdg_surface_get_geometry(client->wlr_xdg_surface, &geo_box);
-	if (cursor_state == WKN_CURSOR_MOVE) {
-		server->focused_offset_x = cursor->wlr_cursor->x - client->x;
-		server->focused_offset_y = cursor->wlr_cursor->y - client->y;
-	} else {
-		// TODO
-		server->focused_offset_x = server->cursor->wlr_cursor->x + geo_box.x;
-		server->focused_offset_y = server->cursor->wlr_cursor->y + geo_box.y;
+	switch (cursor_state) {
+	case WKN_CURSOR_MOVE:
+		server->request_cursor_x = cursor->wlr_cursor->x;
+		server->request_cursor_y = cursor->wlr_cursor->y;
+		server->request_client_x = client->x;
+		server->request_client_y = client->y;
+		break;
+	case WKN_CURSOR_RESIZE:
+		server->request_cursor_x = cursor->wlr_cursor->x;
+		server->request_cursor_y = cursor->wlr_cursor->y;
+		server->request_client_x = client->x;
+		server->request_client_y = client->y;
+		server->request_client_width = geo_box.width;
+		server->request_client_height = geo_box.height;
+		server->request_resize_edges = edges;
+		break;
+	default:
+		break;
 	}
-	server->focused_width = geo_box.width;
-	server->focused_height = geo_box.height;
-	server->resize_edges = edges;
 }
 
 static void wkn_client_map_notify(struct wl_listener *listener, void *data)
@@ -80,7 +90,6 @@ static void wkn_client_request_move_notify(
 )
 {
 	struct wkn_client *client = wl_container_of(listener, client, request_move);
-	// struct wlr_xdg_toplevel_move_event *event = data;
 	wkn_client_request(client, WKN_CURSOR_MOVE, 0);
 }
 

@@ -5,7 +5,10 @@
 #include "server.h"
 #include "output.h"
 
-static void wkn_server_new_input_notify(struct wl_listener *listener, void *data)
+static void wkn_server_new_input_notify(
+	struct wl_listener *listener,
+	void *data
+)
 {
 	struct wkn_server *server = wl_container_of(listener, server, new_input);
 	struct wlr_input_device *device = data;
@@ -24,7 +27,10 @@ static void wkn_server_new_input_notify(struct wl_listener *listener, void *data
 	wlr_seat_set_capabilities(server->seat->wlr_seat, caps);
 }
 
-static void wkn_server_new_surface_notify(struct wl_listener *listener, void *data)
+static void wkn_server_new_surface_notify(
+	struct wl_listener *listener,
+	void *data
+)
 {
 	struct wkn_server *server = wl_container_of(listener, server, new_surface);
 	struct wlr_xdg_surface *wlr_xdg_surface = data;
@@ -37,7 +43,10 @@ static void wkn_server_new_surface_notify(struct wl_listener *listener, void *da
 	wl_list_insert(&server->clients, &client->link);
 }
 
-static void wkn_server_new_output_notify(struct wl_listener *listener, void *data)
+static void wkn_server_new_output_notify(
+	struct wl_listener *listener,
+	void *data
+)
 {
 	// See https://gitlab.freedesktop.org/wayland/wayland/blob/master/src/wayland-util.h#L373 for wl_container_of.
 	struct wkn_server *server = wl_container_of(
@@ -118,23 +127,63 @@ struct wkn_server *wkn_server_create(void)
 
 void wkn_server_move_focused_client(struct wkn_server *server)
 {
-	server->focused_client->x = server->cursor->wlr_cursor->x - server->focused_offset_x;
-	server->focused_client->y = server->cursor->wlr_cursor->y - server->focused_offset_y;
+	struct wkn_client *client = server->focused_client;
+	struct wkn_cursor *cursor = server->cursor;
+	double dx = server->request_cursor_x - cursor->wlr_cursor->x;
+	double dy = server->request_cursor_y - cursor->wlr_cursor->y;
+	client->x = server->request_client_x - dx;
+	client->y = server->request_client_y - dy;
 }
 
 void wkn_server_resize_focused_client(struct wkn_server *server)
 {
-	// TODO
+	struct wkn_client *client = server->focused_client;
+	struct wkn_cursor *cursor = server->cursor;
+	double dx = server->request_cursor_x - cursor->wlr_cursor->x;
+	double dy = server->request_cursor_y - cursor->wlr_cursor->y;
+	double x;
+	double y;
+	double width;
+	double height;
+	if (server->request_resize_edges & WLR_EDGE_LEFT) {
+		x = server->request_client_x - dx;
+		width = server->request_client_width + dx;
+	} else if (server->request_resize_edges & WLR_EDGE_RIGHT) {
+		x = server->request_client_x;
+		width = server->request_client_width - dx;
+	} else {
+		x = server->request_client_x;
+		width = server->request_client_width;
+	}
+	if (server->request_resize_edges & WLR_EDGE_TOP) {
+		y = server->request_client_y - dy;
+		height = server->request_client_height + dy;
+	} else if (server->request_resize_edges & WLR_EDGE_BOTTOM) {
+		y = server->request_client_y;
+		height = server->request_client_height - dy;
+	} else {
+		y = server->request_client_y;
+		height = server->request_client_height;
+	}
+	wlr_xdg_toplevel_set_size(client->wlr_xdg_surface, width, height);
+	client->x = x;
+	client->y = y;
 }
 
-
-struct wkn_client *wkn_server_find_client_at(struct wkn_server *server, double layout_x, double layout_y)
+struct wkn_client *wkn_server_find_client_at(
+	struct wkn_server *server,
+	double layout_x,
+	double layout_y
+)
 {
 	struct wkn_client *client;
 	wl_list_for_each(client, &server->clients, link) {
 		double client_relative_x = layout_x - client->x;
 		double client_relative_y = layout_y - client->y;
 		// Ugly api needs this...I don't need them.
+		// I have submitted a PR to prevent wlr_xdg_surface_surface_at to assign it when passing NULL.
+		// It has been merged.
+		// TODO: Use NULL when wlroots updated.
 		double _sx;
 		double _sy;
 		struct wlr_surface *wlr_surface = wlr_xdg_surface_surface_at(client->wlr_xdg_surface, client_relative_x, client_relative_y, &_sx, &_sy);

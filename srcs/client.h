@@ -23,7 +23,10 @@ struct wkn_client {
 	struct wl_list link;
 };
 
-struct wkn_client *wkn_client_create(struct wkn_server *server, struct wlr_xdg_surface *wlr_xdg_surface);
+struct wkn_client *wkn_client_create(
+	struct wkn_server *server,
+	struct wlr_xdg_surface *wlr_xdg_surface
+);
 void wkn_client_focus(struct wkn_client *client);
 void wkn_client_destroy(struct wkn_client *client);
 

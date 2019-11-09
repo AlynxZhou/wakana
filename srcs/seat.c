@@ -2,7 +2,10 @@
 #include <stdlib.h>
 #include "seat.h"
 
-static void wkn_seat_request_set_cursor_notify(struct wl_listener *listener, void *data)
+static void wkn_seat_request_set_cursor_notify(
+	struct wl_listener *listener,
+	void *data
+)
 {
 	struct wkn_seat *seat = wl_container_of(listener, seat, request_set_cursor);
 	struct wkn_server *server = seat->server;

@@ -80,7 +80,11 @@ static void wkn_cursor_button_notify(struct wl_listener *listener, void *data)
 	// double sx;
 	// double sy;
 	// struct wlr_seat *wlr_seat = server->seat->wlr_seat;
-	struct wkn_client *client = wkn_server_find_client_at(server, cursor->wlr_cursor->x, cursor->wlr_cursor->y);
+	struct wkn_client *client = wkn_server_find_client_at(
+		server,
+		cursor->wlr_cursor->x,
+		cursor->wlr_cursor->y
+	);
 
 	if (event->state == WLR_BUTTON_RELEASED)
 		cursor->state = WKN_CURSOR_PASSTHROUGH;
@@ -94,7 +98,14 @@ static void wkn_cursor_axis_notify(struct wl_listener *listener, void *data)
 	struct wkn_server *server = cursor->server;
 	struct wlr_event_pointer_axis *event = data;
 
-	wlr_seat_pointer_notify_axis(server->seat->wlr_seat, event->time_msec, event->orientation, event->delta, event->delta_discrete, event->source);
+	wlr_seat_pointer_notify_axis(
+		server->seat->wlr_seat,
+		event->time_msec,
+		event->orientation,
+		event->delta,
+		event->delta_discrete,
+		event->source
+	);
 }
 
 static void wkn_cursor_frame_notify(struct wl_listener *listener, void *data)

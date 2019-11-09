@@ -16,7 +16,10 @@ struct wkn_output {
 	struct wl_list link;
 };
 
-struct wkn_output *wkn_output_create(struct wkn_server *server, struct wlr_output *wlr_output);
+struct wkn_output *wkn_output_create(
+	struct wkn_server *server,
+	struct wlr_output *wlr_output
+);
 void wkn_output_destroy(struct wkn_output *output);
 
 #endif
