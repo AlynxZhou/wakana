@@ -10,7 +10,11 @@ static void wkn_server_new_input_notify(
 	void *data
 )
 {
-	struct wkn_server *server = wl_container_of(listener, server, new_input);
+	struct wkn_server *server = wl_container_of(
+		listener,
+		server,
+		new_input
+	);
 	struct wlr_input_device *device = data;
 	switch (device->type) {
 	case WLR_INPUT_DEVICE_POINTER:

@@ -1,3 +1,3 @@
-cmake_minimum_required(VERSION 2.8.12)
-project(wakana)
+cmake_minimum_required(VERSION 3.0)
+project("wakana" C)
 add_subdirectory("srcs")
