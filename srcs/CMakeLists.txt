@@ -9,6 +9,7 @@ find_package(WaylandProtocols 1.15 REQUIRED)
 find_package(WaylandScanner REQUIRED)
 find_package(Xkbcommon REQUIRED)
 find_package(Pixman REQUIRED)
+find_package(Wlroots REQUIRED)
 
 set(
 	XDG_SHELL_PROTOCOL_XML
@@ -37,7 +38,9 @@ add_custom_command(
 
 include_directories(
 	${WAYLAND_SERVER_INCLUDE_DIRS}
+	${XKBCOMMON_INCLUDE_DIRS}
 	${PIXMAN_INCLUDE_DIRS}
+	${WLROOTS_INCLUDE_DIRS}
 	${CMAKE_CURRENT_BINARY_DIR}
 	"."
 )
@@ -54,11 +57,12 @@ target_compile_definitions(
 	${WAYLAND_SERVER_DEFINITIONS}
 	${XKBCOMMON_DEFINITIONS}
 	${PIXMAN_DEFINITIONS}
+	${WLROOTS_DEFINITIONS}
 )
 target_link_libraries(
 	"wakana"
-	"wlroots"
 	${WAYLAND_SERVER_LIBRARIES}
 	${XKBCOMMON_LIBRARIES}
 	${PIXMAN_LIBRARIES}
+	${WLROOTS_LIBRARIES}
 )
