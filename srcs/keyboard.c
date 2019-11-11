@@ -7,6 +7,20 @@
 
 // #define toXkbcommonKeycode(x) ((x) + 8)
 
+static void wkn_keyboard_destroy_notify(
+	struct wl_listener *listener,
+	void *data
+)
+{
+	struct wkn_keyboard *keyboard = wl_container_of(
+		listener,
+		keyboard,
+		destroy
+	);
+	wl_list_remove(&keyboard->link);
+	wkn_keyboard_destroy(keyboard);
+}
+
 static void wkn_keyboard_modifiers_notify(
 	struct wl_listener *listener,
 	void *data
@@ -20,7 +34,10 @@ static void wkn_keyboard_modifiers_notify(
 	struct wkn_server *server = keyboard->server;
 	struct wkn_seat *seat = server->seat;
 	wlr_seat_set_keyboard(seat->wlr_seat, keyboard->wlr_input_device);
-	wlr_seat_keyboard_notify_modifiers(seat->wlr_seat, &keyboard->wlr_keyboard->modifiers);
+	wlr_seat_keyboard_notify_modifiers(
+		seat->wlr_seat,
+		&keyboard->wlr_keyboard->modifiers
+	);
 }
 
 static void wkn_keyboard_key_notify(struct wl_listener *listener, void *data)
@@ -76,6 +93,12 @@ struct wkn_keyboard *wkn_keyboard_create(
 	);
 	keyboard->key.notify = wkn_keyboard_key_notify;
 	wl_signal_add(&keyboard->wlr_keyboard->events.key, &keyboard->key);
+	// TODO: enable when wlroots has new releases.
+	// keyboard->destroy.notify = wkn_keyboard_destroy_notify;
+	// wl_signal_add(
+	// 	&keyboard->wlr_keyboard->events.destroy,
+	// 	&keyboard->destroy
+	// );
 
 	wlr_keyboard_set_repeat_info(
 		keyboard->wlr_keyboard,

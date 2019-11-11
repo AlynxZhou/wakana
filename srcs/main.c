@@ -19,10 +19,10 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
+	wl_display_init_shm(server->wl_display);
+
 	setenv("WAYLAND_DISPLAY", socket, true);
 	printf("Running Wakana on WAYLAND_DISPLAY=%s\n", socket);
-
-	wl_display_init_shm(server->wl_display);
 
 	wl_display_run(server->wl_display);
 

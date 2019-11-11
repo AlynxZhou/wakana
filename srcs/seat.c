@@ -24,7 +24,10 @@ struct wkn_seat *wkn_seat_create(struct wkn_server *server, const char name[])
 	seat->wlr_seat = wlr_seat_create(server->wl_display, name);
 	assert(seat->wlr_seat);
 	seat->request_set_cursor.notify = wkn_seat_request_set_cursor_notify;
-	wl_signal_add(&seat->wlr_seat->events.request_set_cursor, &seat->request_set_cursor);
+	wl_signal_add(
+		&seat->wlr_seat->events.request_set_cursor,
+		&seat->request_set_cursor
+	);
 	return seat;
 }
 

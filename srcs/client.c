@@ -89,7 +89,11 @@ static void wkn_client_request_move_notify(
 	void *data
 )
 {
-	struct wkn_client *client = wl_container_of(listener, client, request_move);
+	struct wkn_client *client = wl_container_of(
+		listener,
+		client,
+		request_move
+	);
 	wkn_client_request(client, WKN_CURSOR_MOVE, 0);
 }
 
@@ -98,7 +102,11 @@ static void wkn_client_request_resize_notify(
 	void *data
 )
 {
-	struct wkn_client *client = wl_container_of(listener, client, request_resize);
+	struct wkn_client *client = wl_container_of(
+		listener,
+		client,
+		request_resize
+	);
 	struct wlr_xdg_toplevel_resize_event *event = data;
 	wkn_client_request(client, WKN_CURSOR_RESIZE, event->edges);
 }

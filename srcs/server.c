@@ -204,6 +204,18 @@ bool wkn_server_handle_keybindings(struct wkn_server *server)
 		// TODO: Restart session.
 		return true;
 	}
+	if ((server->key_states[KEY_LEFTMETA] == WLR_KEY_PRESSED &&
+	     server->key_states[KEY_ESC] == WLR_KEY_PRESSED) ||
+	    (server->key_states[KEY_LEFTCTRL] == WLR_KEY_PRESSED &&
+	     server->key_states[KEY_LEFTALT] == WLR_KEY_PRESSED &&
+	     server->key_states[KEY_ESC] == WLR_KEY_PRESSED)) {
+		printf("Exit!\n");
+		// TODO: better exit.
+		// wl_display_terminate(server->wl_display);
+		// wkn_server_destroy(server);
+		exit(EXIT_SUCCESS);
+		return true;
+	}
 	return false;
 }
 
@@ -234,8 +246,10 @@ void wkn_server_destroy(struct wkn_server *server)
 {
 	if (!server)
 		return;
-	if (server->wl_display)
+	if (server->wl_display) {
+		wl_display_destroy_clients(server->wl_display);
 		wl_display_destroy(server->wl_display);
+	}
 	if (server->wlr_backend)
 		wlr_backend_destroy(server->wlr_backend);
 	if (server->wlr_compositor)
@@ -249,7 +263,19 @@ void wkn_server_destroy(struct wkn_server *server)
 	if (server->seat)
 		wkn_seat_destroy(server->seat);
 	if (!wl_list_empty(&server->outputs)) {
-		// Need more operations.
+		struct wkn_output *output;
+		wl_list_for_each(output, &server->outputs, link)
+			wkn_output_destroy(output);
+	}
+	if (!wl_list_empty(&server->clients)) {
+		struct wkn_client *client;
+		wl_list_for_each(client, &server->clients, link)
+			wkn_client_destroy(client);
+	}
+	if (!wl_list_empty(&server->keyboards)) {
+		struct wkn_keyboard *keyboard;
+		wl_list_for_each(keyboard, &server->keyboards, link)
+			wkn_keyboard_destroy(keyboard);
 	}
 	free(server);
 }
