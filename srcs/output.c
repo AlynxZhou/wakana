@@ -107,7 +107,10 @@ static void wkn_output_frame_notify(struct wl_listener *listener, void *data)
 	wlr_output_commit(wlr_output);
 }
 
-struct wkn_output *wkn_output_create(struct wkn_server *server, struct wlr_output *wlr_output)
+struct wkn_output *wkn_output_create(
+	struct wkn_server *server,
+	struct wlr_output *wlr_output
+)
 {
 	struct wkn_output *output = malloc(sizeof(*output));
 	assert(output);

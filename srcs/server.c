@@ -4,6 +4,7 @@
 #include <wlr/types/wlr_input_device.h>
 #include "server.h"
 #include "output.h"
+#include "keyboard.h"
 
 static void wkn_server_new_input_notify(
 	struct wl_listener *listener,
@@ -21,6 +22,8 @@ static void wkn_server_new_input_notify(
 		wlr_cursor_attach_input_device(server->cursor->wlr_cursor, device);
 		break;
 	case WLR_INPUT_DEVICE_KEYBOARD:
+		struct wkn_keyboard *wkn_keyboard_create(server);
+		wl_list_insert(&server->keyboards, &keyboard->link);
 		break;
 	default:
 		break;
