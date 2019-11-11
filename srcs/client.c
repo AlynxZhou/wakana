@@ -19,12 +19,12 @@ void wkn_client_focus(struct wkn_client *client)
 			wlr_xdg_surface_from_wlr_surface(prev_wlr_surface),
 			false
 		);
-	// struct wlr_keyboard *wlr_keyboard = wlr_seat_get_keyboard(seat->wlr_seat);
+	struct wlr_keyboard *wlr_keyboard = wlr_seat_get_keyboard(seat->wlr_seat);
 	// You are focused! Go to top!
 	wl_list_remove(&client->link);
 	wl_list_insert(&server->clients, &client->link);
 	wlr_xdg_toplevel_set_activated(client->wlr_xdg_surface, true);
-	// wlr_seat_keyboard_notify_enter(seat->wlr_seat, client->wlr_xdg_surface->surface, wlr_keyboard->keycodes, wlr_keyboard->num_keycodes, &wlr_keyboard->modifiers);
+	wlr_seat_keyboard_notify_enter(seat->wlr_seat, client->wlr_xdg_surface->surface, wlr_keyboard->keycodes, wlr_keyboard->num_keycodes, &wlr_keyboard->modifiers);
 }
 
 // This only happens when move or resize starts.

@@ -18,13 +18,15 @@ static void wkn_server_new_input_notify(
 	);
 	struct wlr_input_device *device = data;
 	switch (device->type) {
-	case WLR_INPUT_DEVICE_POINTER:
+	case WLR_INPUT_DEVICE_POINTER: {
 		wlr_cursor_attach_input_device(server->cursor->wlr_cursor, device);
 		break;
-	case WLR_INPUT_DEVICE_KEYBOARD:
-		struct wkn_keyboard *wkn_keyboard_create(server);
+	}
+	case WLR_INPUT_DEVICE_KEYBOARD: {
+		struct wkn_keyboard *keyboard = wkn_keyboard_create(server, device);
 		wl_list_insert(&server->keyboards, &keyboard->link);
 		break;
+	}
 	default:
 		break;
 	}
