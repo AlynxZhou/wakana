@@ -1,6 +1,9 @@
 #ifndef __SERVER_H__
 #define __SERVER_H__
 
+#include <linux/input-event-codes.h>
+// Support first 128 keys may be enough.
+#define KEYCODE_NUMS 128
 #include <wayland-server.h>
 #include <wayland-util.h>
 #define WLR_USE_UNSTABLE
@@ -41,11 +44,18 @@ struct wkn_server {
 	void *png_data;
 	uint32_t png_width;
 	uint32_t png_height;
+	enum wlr_key_state key_states[KEYCODE_NUMS];
 };
 
 struct wkn_server *wkn_server_create(void);
 void wkn_server_move_focused_client(struct wkn_server *server);
 void wkn_server_resize_focused_client(struct wkn_server *server);
+void wkn_server_update_keys(
+	struct wkn_server *server,
+	uint32_t keycode,
+	enum wlr_key_state state
+);
+bool wkn_server_handle_keybindings(struct wkn_server *server);
 struct wkn_client *wkn_server_find_client_at(
 	struct wkn_server *server,
 	double layout_x,

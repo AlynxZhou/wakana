@@ -1,5 +1,7 @@
 #include <assert.h>
 #include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
 #define WLR_USE_UNSTABLE
 #include <wlr/types/wlr_input_device.h>
 #include "server.h"
@@ -131,6 +133,8 @@ struct wkn_server *wkn_server_create(void)
 	server->new_input.notify = wkn_server_new_input_notify;
 	wl_signal_add(&server->wlr_backend->events.new_input, &server->new_input);
 
+	memset(server->key_states, WLR_KEY_RELEASED, sizeof(server->key_states));
+
 	return server;
 }
 
@@ -177,6 +181,30 @@ void wkn_server_resize_focused_client(struct wkn_server *server)
 	wlr_xdg_toplevel_set_size(client->wlr_xdg_surface, width, height);
 	client->x = x;
 	client->y = y;
+}
+
+void wkn_server_update_keys(
+	struct wkn_server *server,
+	uint32_t keycode,
+	enum wlr_key_state state
+)
+{
+	printf("KEY: %d, STATE: %d\n", keycode, state);
+	if (keycode >= KEYCODE_NUMS)
+		return;
+	server->key_states[keycode] = state;
+}
+
+bool wkn_server_handle_keybindings(struct wkn_server *server)
+{
+	if (server->key_states[KEY_LEFTCTRL] == WLR_KEY_PRESSED &&
+	    server->key_states[KEY_LEFTALT] == WLR_KEY_PRESSED &&
+	    server->key_states[KEY_BACKSPACE] == WLR_KEY_PRESSED) {
+		printf("Restart!\n");
+		// TODO: Restart session.
+		return true;
+	}
+	return false;
 }
 
 struct wkn_client *wkn_server_find_client_at(

@@ -1,10 +1,11 @@
 #include <assert.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #define WLR_USE_UNSTABLE
 #include <wlr/types/wlr_seat.h>
 #include "keyboard.h"
 
-#define toXkbcommonKeycode(x) ((x) + 8)
+// #define toXkbcommonKeycode(x) ((x) + 8)
 
 static void wkn_keyboard_modifiers_notify(
 	struct wl_listener *listener,
@@ -33,13 +34,17 @@ static void wkn_keyboard_key_notify(struct wl_listener *listener, void *data)
 	struct wlr_event_keyboard_key *event = data;
 	struct wkn_seat *seat = server->seat;
 
-	uint32_t keycode = toXkbcommonKeycode(event->keycode);
-	const xkb_keysym_t *syms;
-	int nsyms = xkb_state_key_get_syms(keyboard->wlr_keyboard->xkb_state, keycode, &syms);
-	uint32_t modifiers = wlr_keyboard_get_modifiers(keyboard->wlr_keyboard);
-	// bool isServerKeybinding;
-	wlr_seat_set_keyboard(seat->wlr_seat, keyboard->wlr_input_device);
-	wlr_seat_keyboard_notify_key(seat->wlr_seat, event->time_msec, event->keycode, event->state);
+	wkn_server_update_keys(server, event->keycode, event->state);
+	bool server_handled = wkn_server_handle_keybindings(server);
+	if (!server_handled) {
+		wlr_seat_set_keyboard(seat->wlr_seat, keyboard->wlr_input_device);
+		wlr_seat_keyboard_notify_key(
+			seat->wlr_seat,
+			event->time_msec,
+			event->keycode,
+			event->state
+		);
+	}
 }
 
 struct wkn_keyboard *wkn_keyboard_create(
