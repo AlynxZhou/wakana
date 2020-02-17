@@ -109,4 +109,4 @@ add_custom_target(
 
 add_subdirectory("deps")
 add_subdirectory("srcs")
-add_subdirectory("examples")
+add_subdirectory("clients")
