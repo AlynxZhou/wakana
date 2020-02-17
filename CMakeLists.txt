@@ -1,3 +1,112 @@
 cmake_minimum_required(VERSION 3.0)
 project("wakana" C)
+
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMakeModules")
+set(EXECUTABLE_OUTPUT_PATH "${CMAKE_BINARY_DIR}/bin")
+set(LIBRARY_OUTPUT_PATH "${CMAKE_BINARY_DIR}/lib")
+set(CMAKE_C_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -std=gnu11 -Wall -g -D__DEBUG__")
+set(CMAKE_C_FLAGS_RELEASE "$ENV{CXXFLAGS} -O2 -std=gnu11")
+
+find_package(Wayland REQUIRED)
+find_package(WaylandProtocols 1.15 REQUIRED)
+find_package(WaylandScanner REQUIRED)
+find_package(Xkbcommon REQUIRED)
+find_package(Pixman REQUIRED)
+find_package(Wlroots REQUIRED)
+
+set(
+	XDG_SHELL_PROTOCOL_INCLUDE_DIR
+	${CMAKE_BINARY_DIR}
+)
+set(
+	XDG_SHELL_PROTOCOL_XML
+	"${WAYLAND_PROTOCOLS_PKGDATADIR}/stable/xdg-shell/xdg-shell.xml"
+)
+set(
+	XDG_SHELL_CLIENT_PROTOCOL_HEADER
+	"${XDG_SHELL_PROTOCOL_INCLUDE_DIR}/xdg-shell-client-protocol.h"
+)
+set(
+	XDG_SHELL_PROTOCOL_HEADER
+	"${XDG_SHELL_PROTOCOL_INCLUDE_DIR}/xdg-shell-protocol.h"
+)
+set(
+	XDG_SHELL_PROTOCOL_SOURCE
+	"${XDG_SHELL_PROTOCOL_INCLUDE_DIR}/xdg-shell-protocol.c"
+)
+set_source_files_properties(${XDG_SHELL_CLIENT_PROTOCOL_HEADER} GENERATED)
+set_source_files_properties(${XDG_SHELL_PROTOCOL_HEADER} GENERATED)
+set_source_files_properties(${XDG_SHELL_PROTOCOL_SOURCE} GENERATED)
+add_custom_command(
+	OUTPUT ${XDG_SHELL_CLIENT_PROTOCOL_HEADER}
+	COMMAND ${WAYLAND_SCANNER_EXECUTABLE} "client-header" ${XDG_SHELL_PROTOCOL_XML} ${XDG_SHELL_CLIENT_PROTOCOL_HEADER}
+	VERBATIM
+)
+add_custom_command(
+	OUTPUT ${XDG_SHELL_PROTOCOL_HEADER}
+	COMMAND ${WAYLAND_SCANNER_EXECUTABLE} "server-header" ${XDG_SHELL_PROTOCOL_XML} ${XDG_SHELL_PROTOCOL_HEADER}
+	VERBATIM
+)
+add_custom_command(
+	OUTPUT ${XDG_SHELL_PROTOCOL_SOURCE}
+	COMMAND ${WAYLAND_SCANNER_EXECUTABLE} "private-code" ${XDG_SHELL_PROTOCOL_XML} ${XDG_SHELL_PROTOCOL_SOURCE}
+	VERBATIM
+)
+add_custom_target(
+	"xdg-shell-protocol"
+	DEPENDS
+	${XDG_SHELL_CLIENT_PROTOCOL_HEADER}
+	${XDG_SHELL_PROTOCOL_HEADER}
+	${XDG_SHELL_PROTOCOL_SOURCE}
+)
+
+set(
+	WLR_LAYER_SHELL_PROTOCOL_INCLUDE_DIR
+	${CMAKE_BINARY_DIR}
+)
+set(
+	WLR_LAYER_SHELL_PROTOCOL_XML
+	"${CMAKE_SOURCE_DIR}/deps/wlr-protocols/unstable/wlr-layer-shell-unstable-v1.xml"
+)
+set(
+	WLR_LAYER_SHELL_CLIENT_PROTOCOL_HEADER
+	"${WLR_LAYER_SHELL_PROTOCOL_INCLUDE_DIR}/wlr-layer-shell-client-unstable-v1-protocol.h"
+)
+set(
+	WLR_LAYER_SHELL_PROTOCOL_HEADER
+	"${WLR_LAYER_SHELL_PROTOCOL_INCLUDE_DIR}/wlr-layer-shell-unstable-v1-protocol.h"
+)
+set(
+	WLR_LAYER_SHELL_PROTOCOL_SOURCE
+	"${WLR_LAYER_SHELL_PROTOCOL_INCLUDE_DIR}/wlr-layer-shell-unstable-v1-protocol.c"
+)
+set_source_files_properties(${WLR_LAYER_SHELL_CLIENT_PROTOCOL_HEADER} GENERATED)
+set_source_files_properties(${WLR_LAYER_SHELL_PROTOCOL_HEADER} GENERATED)
+set_source_files_properties(${WLR_LAYER_SHELL_PROTOCOL_SOURCE} GENERATED)
+add_custom_command(
+	OUTPUT ${WLR_LAYER_SHELL_CLIENT_PROTOCOL_HEADER}
+	COMMAND ${WAYLAND_SCANNER_EXECUTABLE} "client-header" ${WLR_LAYER_SHELL_PROTOCOL_XML} ${WLR_LAYER_SHELL_CLIENT_PROTOCOL_HEADER}
+	VERBATIM
+)
+add_custom_command(
+	OUTPUT ${WLR_LAYER_SHELL_PROTOCOL_HEADER}
+	COMMAND ${WAYLAND_SCANNER_EXECUTABLE} "server-header" ${WLR_LAYER_SHELL_PROTOCOL_XML} ${WLR_LAYER_SHELL_PROTOCOL_HEADER}
+	VERBATIM
+)
+add_custom_command(
+	OUTPUT ${WLR_LAYER_SHELL_PROTOCOL_SOURCE}
+	COMMAND ${WAYLAND_SCANNER_EXECUTABLE} "private-code" ${WLR_LAYER_SHELL_PROTOCOL_XML} ${WLR_LAYER_SHELL_PROTOCOL_SOURCE}
+	VERBATIM
+)
+add_custom_target(
+	"wlr-layer-shell-protocol"
+	DEPENDS
+	${WLR_LAYER_SHELL_CLIENT_PROTOCOL_HEADER}
+	${WLR_LAYER_SHELL_PROTOCOL_HEADER}
+	${WLR_LAYER_SHELL_PROTOCOL_SOURCE}
+)
+
+
+add_subdirectory("deps")
 add_subdirectory("srcs")
+add_subdirectory("examples")

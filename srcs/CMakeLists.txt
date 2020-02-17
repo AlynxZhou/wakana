@@ -1,48 +1,18 @@
-set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/CMakeModules")
-set(CMAKE_C_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -std=gnu11 -Wall -g -D__DEBUG__")
-set(CMAKE_C_FLAGS_RELEASE "$ENV{CXXFLAGS} -O2 -std=gnu11")
-set(EXECUTABLE_OUTPUT_PATH "${PROJECT_BINARY_DIR}/bin")
-set(LIBRARY_OUTPUT_PATH "${PROJECT_BINARY_DIR}/lib")
-
-find_package(Wayland REQUIRED)
-find_package(WaylandProtocols 1.15 REQUIRED)
-find_package(WaylandScanner REQUIRED)
-find_package(Xkbcommon REQUIRED)
-find_package(Pixman REQUIRED)
-find_package(Wlroots REQUIRED)
-
-set(
-	XDG_SHELL_PROTOCOL_XML
-	"${WAYLAND_PROTOCOLS_PKGDATADIR}/stable/xdg-shell/xdg-shell.xml"
-)
-set(
-	XDG_SHELL_PROTOCOL_HEADER
-	"${CMAKE_CURRENT_BINARY_DIR}/xdg-shell-protocol.h"
-)
-set(
-	XDG_SHELL_PROTOCOL_SOURCE
-	"${CMAKE_CURRENT_BINARY_DIR}/xdg-shell-protocol.c"
-)
-set_source_files_properties(${XDG_SHELL_PROTOCOL_HEADER} GENERATED)
-set_source_files_properties(${XDG_SHELL_PROTOCOL_SOURCE} GENERATED)
-add_custom_command(
-	OUTPUT ${XDG_SHELL_PROTOCOL_HEADER}
-	COMMAND ${WAYLAND_SCANNER_EXECUTABLE} "server-header" ${XDG_SHELL_PROTOCOL_XML} ${XDG_SHELL_PROTOCOL_HEADER}
-	VERBATIM
-)
-add_custom_command(
-	OUTPUT ${XDG_SHELL_PROTOCOL_SOURCE}
-	COMMAND ${WAYLAND_SCANNER_EXECUTABLE} "private-code" ${XDG_SHELL_PROTOCOL_XML} ${XDG_SHELL_PROTOCOL_SOURCE}
-	VERBATIM
-)
-
 include_directories(
 	${WAYLAND_SERVER_INCLUDE_DIRS}
 	${XKBCOMMON_INCLUDE_DIRS}
 	${PIXMAN_INCLUDE_DIRS}
 	${WLROOTS_INCLUDE_DIRS}
-	${CMAKE_CURRENT_BINARY_DIR}
+	${XDG_SHELL_PROTOCOL_INCLUDE_DIR}
+	${WLR_LAYER_SHELL_PROTOCOL_INCLUDE_DIR}
 	"."
+)
+set_source_files_properties(
+	${XDG_SHELL_PROTOCOL_HEADER}
+	${XDG_SHELL_PROTOCOL_SOURCE}
+	${WLR_LAYER_SHELL_PROTOCOL_HEADER}
+	${WLR_LAYER_SHELL_PROTOCOL_SOURCE}
+	PROPERTIES GENERATED 1
 )
 aux_source_directory("." WAKANA_SOURCES)
 add_executable(
@@ -50,7 +20,10 @@ add_executable(
 	${WAKANA_SOURCES}
 	${XDG_SHELL_PROTOCOL_HEADER}
 	${XDG_SHELL_PROTOCOL_SOURCE}
+	${WLR_LAYER_SHELL_PROTOCOL_HEADER}
+	${WLR_LAYER_SHELL_PROTOCOL_SOURCE}
 )
+add_dependencies("wakana" "xdg-shell-protocol" "wlr-layer-shell-protocol")
 target_compile_definitions(
 	"wakana"
 	PUBLIC
