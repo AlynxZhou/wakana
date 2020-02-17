@@ -1,0 +1,9 @@
+[submodule "deps/loaders"]
+	path = deps/loaders
+	url = https://github.com/AlynxZhou/gles-loaders
+[submodule "deps/mvmath"]
+	path = deps/mvmath
+	url = https://github.com/AlynxZhou/mvmath
+[submodule "deps/wlr-protocols"]
+	path = deps/wlr-protocols
+	url = https://github.com/swaywm/wlr-protocols.git
