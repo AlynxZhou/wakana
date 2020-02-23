@@ -4,18 +4,26 @@
 #include <wayland-server.h>
 #include <wayland-util.h>
 #define WLR_USE_UNSTABLE
+#include <wlr/types/wlr_layer_shell_v1.h>
 #include <wlr/types/wlr_output.h>
 #include "server.h"
+
+#define LAYER_NUMBER 4
 
 struct wkn_output {
 	struct wkn_server *server;
 	struct wlr_output *wlr_output;
 	struct wl_listener destroy;
 	struct wl_listener frame;
+	struct wl_list layer_surfaces[LAYER_NUMBER];
 	// wl_list requires this for item.
 	struct wl_list link;
 };
 
+void wkn_output_arrange_layer_surfaces(
+	struct wkn_output *output,
+	enum zwlr_layer_shell_v1_layer layer
+);
 struct wkn_output *wkn_output_create(
 	struct wkn_server *server,
 	struct wlr_output *wlr_output

@@ -38,4 +38,5 @@ target_link_libraries(
 	${XKBCOMMON_LIBRARIES}
 	${PIXMAN_LIBRARIES}
 	${WLROOTS_LIBRARIES}
+	# "GLESv2"
 )

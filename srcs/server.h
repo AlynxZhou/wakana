@@ -9,11 +9,12 @@
 #define WLR_USE_UNSTABLE
 #include <wlr/backend.h>
 #include <wlr/render/wlr_renderer.h>
-#include <wlr/types/wlr_data_device.h>
 #include <wlr/types/wlr_output_layout.h>
 #include <wlr/types/wlr_compositor.h>
 #include <wlr/types/wlr_xdg_shell.h>
+#include <wlr/types/wlr_layer_shell_v1.h>
 #include "client.h"
+#include "layer-surface.h"
 #include "cursor.h"
 #include "seat.h"
 
@@ -24,6 +25,7 @@ struct wkn_server {
 	struct wlr_renderer *wlr_renderer;
 	struct wlr_compositor *wlr_compositor;
 	struct wlr_xdg_shell *wlr_xdg_shell;
+	struct wlr_layer_shell_v1 *wlr_layer_shell;
 	struct wlr_output_layout *wlr_output_layout;
 	struct wkn_cursor *cursor;
 	struct wkn_seat *seat;
@@ -37,8 +39,10 @@ struct wkn_server {
 	uint32_t request_resize_edges;
 	struct wl_listener new_output;
 	struct wl_list outputs;
-	struct wl_listener new_surface;
+	struct wl_listener new_xdg_surface;
+	struct wl_listener new_layer_surface;
 	struct wl_list clients;
+	struct wl_list layers;
 	struct wl_listener new_input;
 	struct wl_list keyboards;
 	void *png_data;

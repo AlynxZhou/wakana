@@ -3,7 +3,9 @@
 #include <stdbool.h>
 #include <string.h>
 #define WLR_USE_UNSTABLE
+#include <wlr/types/wlr_data_device.h>
 #include <wlr/types/wlr_input_device.h>
+#include <wlr/types/wlr_xdg_output_v1.h>
 #include "server.h"
 #include "output.h"
 #include "keyboard.h"
@@ -38,20 +40,63 @@ static void wkn_server_new_input_notify(
 	wlr_seat_set_capabilities(server->seat->wlr_seat, caps);
 }
 
-static void wkn_server_new_surface_notify(
+static void wkn_server_new_xdg_surface_notify(
 	struct wl_listener *listener,
 	void *data
 )
 {
-	struct wkn_server *server = wl_container_of(listener, server, new_surface);
+	struct wkn_server *server = wl_container_of(listener, server, new_xdg_surface);
 	struct wlr_xdg_surface *wlr_xdg_surface = data;
 
 	if (wlr_xdg_surface->role != WLR_XDG_SURFACE_ROLE_TOPLEVEL) {
 		return;
 	}
 
+	wlr_xdg_surface_ping(wlr_xdg_surface);
+
 	struct wkn_client *client = wkn_client_create(server, wlr_xdg_surface);
 	wl_list_insert(&server->clients, &client->link);
+}
+
+static void wkn_server_new_layer_surface_notify(
+	struct wl_listener *listener,
+	void *data
+)
+{
+	struct wkn_server *server = wl_container_of(listener, server, new_layer_surface);
+	struct wlr_layer_surface_v1 *wlr_layer_surface = data;
+
+	struct wkn_output *output = NULL;
+	if (!wlr_layer_surface->output) {
+		// Just attach it to the first output.
+		output = wl_container_of(server->outputs.next, output, link);
+		wlr_layer_surface->output = output->wlr_output;
+	} else {
+		struct wkn_output *iter;
+		wl_list_for_each(iter, &server->outputs, link) {
+			if (iter->wlr_output == wlr_layer_surface->output) {
+				output = iter;
+				break;
+			}
+		}
+		if (output == NULL) {
+			return;
+		}
+	}
+
+	struct wkn_layer_surface *layer_surface = wkn_layer_surface_create(
+		server,
+		wlr_layer_surface
+	);
+	layer_surface->output = output;
+	wl_list_insert(
+		&(output->layer_surfaces[wlr_layer_surface->current.layer]),
+		&(layer_surface->link)
+	);
+	wkn_output_arrange_layer_surfaces(
+		output,
+		wlr_layer_surface->current.layer
+	);
 }
 
 static void wkn_server_new_output_notify(
@@ -83,6 +128,17 @@ static void wkn_server_new_output_notify(
 	wlr_output_create_global(wlr_output);
 }
 
+// wlr_renderer *wkn_gles_renderer_create(
+// 	wlr_egl *egl,
+// 	EGLenum platform,
+//         void *remote,
+// 	EGLint *_r_attr,
+// 	EGLint visual
+// )
+// {
+// 	return NULL;
+// }
+
 struct wkn_server *wkn_server_create(void)
 {
 	struct wkn_server *server = malloc(sizeof(*server));
@@ -106,34 +162,62 @@ struct wkn_server *wkn_server_create(void)
 	);
 	assert(server->wlr_compositor);
 
-	wlr_data_device_manager_create(server->wl_display);
-
 	server->wlr_xdg_shell = wlr_xdg_shell_create(server->wl_display);
 	assert(server->wlr_xdg_shell);
+
+	server->wlr_layer_shell = wlr_layer_shell_v1_create(server->wl_display);
+	assert(server->wlr_layer_shell);
 
 	server->wlr_output_layout = wlr_output_layout_create();
 	assert(server->wlr_output_layout);
 
+	wlr_data_device_manager_create(server->wl_display);
+	wlr_xdg_output_manager_v1_create(
+		server->wl_display,
+		server->wlr_output_layout
+	);
+
 	server->cursor = wkn_cursor_create(server);
 	assert(server->cursor);
-	wlr_cursor_attach_output_layout(server->cursor->wlr_cursor, server->wlr_output_layout);
+	wlr_cursor_attach_output_layout(
+		server->cursor->wlr_cursor,
+		server->wlr_output_layout
+	);
 
 	server->seat = wkn_seat_create(server, "seat0");
 	assert(server->seat);
 
 	wl_list_init(&server->outputs);
 	server->new_output.notify = wkn_server_new_output_notify;
-	wl_signal_add(&server->wlr_backend->events.new_output, &server->new_output);
+	wl_signal_add(
+		&server->wlr_backend->events.new_output,
+		&server->new_output
+	);
 
 	wl_list_init(&server->clients);
-	server->new_surface.notify = wkn_server_new_surface_notify;
-	wl_signal_add(&server->wlr_xdg_shell->events.new_surface, &server->new_surface);
+	server->new_xdg_surface.notify = wkn_server_new_xdg_surface_notify;
+	wl_signal_add(
+		&server->wlr_xdg_shell->events.new_surface,
+		&server->new_xdg_surface
+	);
+	server->new_layer_surface.notify = wkn_server_new_layer_surface_notify;
+	wl_signal_add(
+		&server->wlr_layer_shell->events.new_surface,
+		&server->new_layer_surface
+	);
 
 	wl_list_init(&server->keyboards);
 	server->new_input.notify = wkn_server_new_input_notify;
-	wl_signal_add(&server->wlr_backend->events.new_input, &server->new_input);
+	wl_signal_add(
+		&server->wlr_backend->events.new_input,
+		&server->new_input
+	);
 
-	memset(server->key_states, WLR_KEY_RELEASED, sizeof(server->key_states));
+	memset(
+		server->key_states,
+		WLR_KEY_RELEASED,
+		sizeof(server->key_states)
+	);
 
 	return server;
 }
@@ -179,6 +263,7 @@ void wkn_server_resize_focused_client(struct wkn_server *server)
 		height = server->request_client_height;
 	}
 	wlr_xdg_toplevel_set_size(client->wlr_xdg_surface, width, height);
+	// Better to wait for the client's redrawing then do recompositing.
 	client->x = x;
 	client->y = y;
 }
@@ -235,7 +320,13 @@ struct wkn_client *wkn_server_find_client_at(
 		// TODO: Use NULL when wlroots updated.
 		double _sx;
 		double _sy;
-		struct wlr_surface *wlr_surface = wlr_xdg_surface_surface_at(client->wlr_xdg_surface, client_relative_x, client_relative_y, &_sx, &_sy);
+		struct wlr_surface *wlr_surface = wlr_xdg_surface_surface_at(
+			client->wlr_xdg_surface,
+			client_relative_x,
+			client_relative_y,
+			&_sx,
+			&_sy
+		);
 		if (wlr_surface)
 			return client;
 	}
@@ -252,10 +343,10 @@ void wkn_server_destroy(struct wkn_server *server)
 	}
 	if (server->wlr_backend)
 		wlr_backend_destroy(server->wlr_backend);
-	if (server->wlr_compositor)
-		wlr_compositor_destroy(server->wlr_compositor);
-	if (server->wlr_xdg_shell)
-		wlr_xdg_shell_destroy(server->wlr_xdg_shell);
+	// if (server->wlr_compositor)
+	// 	wlr_compositor_destroy(server->wlr_compositor);
+	// if (server->wlr_xdg_shell)
+	// 	wlr_xdg_shell_destroy(server->wlr_xdg_shell);
 	if (server->wlr_output_layout)
 		wlr_output_layout_destroy(server->wlr_output_layout);
 	if (server->cursor)
