@@ -6,6 +6,7 @@
 #define WLR_USE_UNSTABLE
 #include <wlr/types/wlr_layer_shell_v1.h>
 #include <wlr/types/wlr_output.h>
+#include "wakana.h"
 #include "server.h"
 
 #define LAYER_NUMBER 4

@@ -120,8 +120,8 @@ static void wkn_output_render_surface(
 
 	// Not a real hidpi support, just a dummy implemention.
 	struct wlr_box render_box = {
-		.x = (layout_x + client->x + surface_x) * output->wlr_output->scale,
-		.y = (layout_y + client->y + surface_y) * output->wlr_output->scale,
+		.x = (layout_x + client->rect.x + surface_x) * output->wlr_output->scale,
+		.y = (layout_y + client->rect.y + surface_y) * output->wlr_output->scale,
 		.width = wlr_surface->current.width * output->wlr_output->scale,
 		.height = wlr_surface->current.height * output->wlr_output->scale
 	};
@@ -274,6 +274,8 @@ static void wkn_output_frame_notify(struct wl_listener *listener, void *data)
 			continue;
 		wkn_output_render_layer_surface(layer_surface, &now);
 	}
+
+	wlr_output_render_software_cursors(wlr_output, NULL);
 
 	wlr_renderer_end(wlr_renderer);
 	wlr_output_commit(wlr_output);

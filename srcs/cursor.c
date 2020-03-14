@@ -25,8 +25,8 @@ static void wkn_cursor_process_motion(struct wkn_cursor *cursor, uint32_t time)
 		wlr_seat_pointer_clear_focus(seat->wlr_seat);
 		return;
 	}
-	double client_relative_x = cursor->wlr_cursor->x - client->x;
-	double client_relative_y = cursor->wlr_cursor->y - client->y;
+	double client_relative_x = cursor->wlr_cursor->x - client->rect.x;
+	double client_relative_y = cursor->wlr_cursor->y - client->rect.y;
 	double sub_x;
 	double sub_y;
 	struct wlr_surface *wlr_surface = wlr_xdg_surface_surface_at(

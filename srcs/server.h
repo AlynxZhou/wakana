@@ -13,6 +13,7 @@
 #include <wlr/types/wlr_compositor.h>
 #include <wlr/types/wlr_xdg_shell.h>
 #include <wlr/types/wlr_layer_shell_v1.h>
+#include "wakana.h"
 #include "client.h"
 #include "layer-surface.h"
 #include "cursor.h"
@@ -32,10 +33,7 @@ struct wkn_server {
 	struct wkn_client *focused_client;
 	double request_cursor_x;
 	double request_cursor_y;
-	double request_client_x;
-	double request_client_y;
-	double request_client_width;
-	double request_client_height;
+	struct wkn_rect request_rect;
 	uint32_t request_resize_edges;
 	struct wl_listener new_output;
 	struct wl_list outputs;

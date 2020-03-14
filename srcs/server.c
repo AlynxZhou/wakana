@@ -6,6 +6,7 @@
 #include <wlr/types/wlr_data_device.h>
 #include <wlr/types/wlr_input_device.h>
 #include <wlr/types/wlr_xdg_output_v1.h>
+#include "logger.h"
 #include "server.h"
 #include "output.h"
 #include "keyboard.h"
@@ -55,6 +56,9 @@ static void wkn_server_new_xdg_surface_notify(
 	wlr_xdg_surface_ping(wlr_xdg_surface);
 
 	struct wkn_client *client = wkn_client_create(server, wlr_xdg_surface);
+	// Attach to the first output.
+	struct wkn_output *output = wl_container_of(server->outputs.next, output, link);
+	client->output = output;
 	wl_list_insert(&server->clients, &client->link);
 }
 
@@ -79,9 +83,8 @@ static void wkn_server_new_layer_surface_notify(
 				break;
 			}
 		}
-		if (output == NULL) {
+		if (output == NULL)
 			return;
-		}
 	}
 
 	struct wkn_layer_surface *layer_surface = wkn_layer_surface_create(
@@ -228,8 +231,8 @@ void wkn_server_move_focused_client(struct wkn_server *server)
 	struct wkn_cursor *cursor = server->cursor;
 	double dx = server->request_cursor_x - cursor->wlr_cursor->x;
 	double dy = server->request_cursor_y - cursor->wlr_cursor->y;
-	client->x = server->request_client_x - dx;
-	client->y = server->request_client_y - dy;
+	client->rect.x = server->request_rect.x - dx;
+	client->rect.y = server->request_rect.y - dy;
 }
 
 void wkn_server_resize_focused_client(struct wkn_server *server)
@@ -238,34 +241,31 @@ void wkn_server_resize_focused_client(struct wkn_server *server)
 	struct wkn_cursor *cursor = server->cursor;
 	double dx = server->request_cursor_x - cursor->wlr_cursor->x;
 	double dy = server->request_cursor_y - cursor->wlr_cursor->y;
-	double x;
-	double y;
-	double width;
-	double height;
+	struct wkn_rect rect;
 	if (server->request_resize_edges & WLR_EDGE_LEFT) {
-		x = server->request_client_x - dx;
-		width = server->request_client_width + dx;
+		rect.x = server->request_rect.x - dx;
+		rect.w = server->request_rect.w + dx;
 	} else if (server->request_resize_edges & WLR_EDGE_RIGHT) {
-		x = server->request_client_x;
-		width = server->request_client_width - dx;
+		rect.x = server->request_rect.x;
+		rect.w = server->request_rect.w - dx;
 	} else {
-		x = server->request_client_x;
-		width = server->request_client_width;
+		rect.x = server->request_rect.x;
+		rect.w = server->request_rect.w;
 	}
 	if (server->request_resize_edges & WLR_EDGE_TOP) {
-		y = server->request_client_y - dy;
-		height = server->request_client_height + dy;
+		rect.y = server->request_rect.y - dy;
+		rect.h = server->request_rect.h + dy;
 	} else if (server->request_resize_edges & WLR_EDGE_BOTTOM) {
-		y = server->request_client_y;
-		height = server->request_client_height - dy;
+		rect.y = server->request_rect.y;
+		rect.h = server->request_rect.h - dy;
 	} else {
-		y = server->request_client_y;
-		height = server->request_client_height;
+		rect.y = server->request_rect.y;
+		rect.h = server->request_rect.h;
 	}
-	wlr_xdg_toplevel_set_size(client->wlr_xdg_surface, width, height);
+
+	wlr_xdg_toplevel_set_size(client->wlr_xdg_surface, rect.w, rect.h);
 	// Better to wait for the client's redrawing then do recompositing.
-	client->x = x;
-	client->y = y;
+	client->rect = rect;
 }
 
 void wkn_server_update_keys(
@@ -274,7 +274,6 @@ void wkn_server_update_keys(
 	enum wlr_key_state state
 )
 {
-	printf("KEY: %d, STATE: %d\n", keycode, state);
 	if (keycode >= KEYCODE_NUMS)
 		return;
 	server->key_states[keycode] = state;
@@ -285,7 +284,7 @@ bool wkn_server_handle_keybindings(struct wkn_server *server)
 	if (server->key_states[KEY_LEFTCTRL] == WLR_KEY_PRESSED &&
 	    server->key_states[KEY_LEFTALT] == WLR_KEY_PRESSED &&
 	    server->key_states[KEY_BACKSPACE] == WLR_KEY_PRESSED) {
-		printf("Restart!\n");
+		wkn_logger_debug("Restart!\n");
 		// TODO: Restart session.
 		return true;
 	}
@@ -294,7 +293,7 @@ bool wkn_server_handle_keybindings(struct wkn_server *server)
 	    (server->key_states[KEY_LEFTCTRL] == WLR_KEY_PRESSED &&
 	     server->key_states[KEY_LEFTALT] == WLR_KEY_PRESSED &&
 	     server->key_states[KEY_ESC] == WLR_KEY_PRESSED)) {
-		printf("Exit!\n");
+		wkn_logger_debug("Exit!\n");
 		// TODO: better exit.
 		// wl_display_terminate(server->wl_display);
 		// wkn_server_destroy(server);
@@ -312,8 +311,8 @@ struct wkn_client *wkn_server_find_client_at(
 {
 	struct wkn_client *client;
 	wl_list_for_each(client, &server->clients, link) {
-		double client_relative_x = layout_x - client->x;
-		double client_relative_y = layout_y - client->y;
+		double client_relative_x = layout_x - client->rect.x;
+		double client_relative_y = layout_y - client->rect.y;
 		// Ugly api needs this...I don't need them.
 		// I have submitted a PR to prevent wlr_xdg_surface_surface_at to assign it when passing NULL.
 		// It has been merged.
