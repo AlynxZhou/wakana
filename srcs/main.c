@@ -2,13 +2,50 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <unistd.h>
 #include "logger.h"
 #include "server.h"
 #include "output.h"
 
+int wkn_drop_permission(void)
+{
+        if (getuid() != geteuid() || getgid() != getegid()) {
+                // Set the gid and uid in the correct order.
+                if (setgid(getgid()) != 0) {
+                        wkn_logger_error(
+				"Failed to drop root group, "
+				"refusing to start.\n"
+			);
+                        return -1;
+                }
+                if (setuid(getuid()) != 0) {
+                        wkn_logger_error(
+				"Failed to drop root user, "
+				"refusing to start.\n"
+			);
+                        return -2;
+                }
+        }
+        if (setgid(0) != -1 || setuid(0) != -1) {
+                wkn_logger_error(
+			"Unable to drop root (we shouldn't be able to "
+                        "restore it after setuid), refusing to start.\n"
+		);
+                return -3;
+        }
+        return 0;
+}
+
 int main(int argc, char *argv[])
 {
 	struct wkn_server *server = wkn_server_create();
+
+	// We need permission to create backends.
+	// And we can drop permission before creating global.
+	if (wkn_drop_permission() < 0)
+		exit(EXIT_FAILURE);
+
+	wkn_server_setup_global(server);
 
 	const char *socket = wl_display_add_socket_auto(server->wl_display);
 	assert(socket);

@@ -1,6 +1,7 @@
 # P1
 
-- Background client.
+<!-- - Background client. -->
+- Work with logind under TTY.
 - Attach clients to outputs.
 
 # P2

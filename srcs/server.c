@@ -149,6 +149,11 @@ struct wkn_server *wkn_server_create(void)
 	assert(server->wlr_renderer);
 	wlr_renderer_init_wl_display(server->wlr_renderer, server->wl_display);
 
+	return server;
+}
+
+void wkn_server_setup_global(struct wkn_server *server)
+{
 	server->wlr_compositor = wlr_compositor_create(
 		server->wl_display, server->wlr_renderer
 	);
@@ -210,8 +215,6 @@ struct wkn_server *wkn_server_create(void)
 		WLR_KEY_RELEASED,
 		sizeof(server->key_states)
 	);
-
-	return server;
 }
 
 void wkn_server_move_focused_client(struct wkn_server *server)

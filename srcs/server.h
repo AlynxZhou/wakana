@@ -50,6 +50,7 @@ struct wkn_server {
 };
 
 struct wkn_server *wkn_server_create(void);
+void wkn_server_setup_global(struct wkn_server *server);
 void wkn_server_move_focused_client(struct wkn_server *server);
 void wkn_server_resize_focused_client(struct wkn_server *server);
 void wkn_server_update_keys(
