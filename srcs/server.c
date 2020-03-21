@@ -131,17 +131,6 @@ static void wkn_server_new_output_notify(
 	wlr_output_create_global(wlr_output);
 }
 
-// wlr_renderer *wkn_gles_renderer_create(
-// 	wlr_egl *egl,
-// 	EGLenum platform,
-//         void *remote,
-// 	EGLint *_r_attr,
-// 	EGLint visual
-// )
-// {
-// 	return NULL;
-// }
-
 struct wkn_server *wkn_server_create(void)
 {
 	struct wkn_server *server = malloc(sizeof(*server));
