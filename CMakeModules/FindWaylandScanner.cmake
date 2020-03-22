@@ -6,7 +6,7 @@
 find_program(WAYLAND_SCANNER_EXECUTABLE NAMES "wayland-scanner")
 
 find_package_handle_standard_args(
-	WAYLAND_SCANNER
+	WaylandScanner
 	DEFAULT_MSG
 	WAYLAND_SCANNER_EXECUTABLE
 )

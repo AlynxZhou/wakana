@@ -24,7 +24,7 @@ find_library(
 )
 
 find_package_handle_standard_args(
-	XKBCOMMON
+	Xkbcommon
 	DEFAULT_MSG
 	XKBCOMMON_LIBRARIES XKBCOMMON_INCLUDE_DIRS
 )

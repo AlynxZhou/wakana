@@ -24,7 +24,7 @@ find_library(
 )
 
 find_package_handle_standard_args(
-	WLROOTS
+	Wlroots
 	DEFAULT_MSG
 	WLROOTS_LIBRARIES WLROOTS_INCLUDE_DIRS
 )

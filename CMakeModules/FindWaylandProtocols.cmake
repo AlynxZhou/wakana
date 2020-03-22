@@ -22,7 +22,7 @@ if(COMMAND_FAILED)
 endif()
 
 find_package_handle_standard_args(
-	WAYLAND_PROTOCOLS
+	WaylandProtocols
 	DEFAULT_MSG
 	WAYLAND_PROTOCOLS_PKGDATADIR
 )

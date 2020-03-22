@@ -24,7 +24,7 @@ find_library(
 )
 
 find_package_handle_standard_args(
-	PIXMAN
+	Pixman
 	DEFAULT_MSG
 	PIXMAN_LIBRARIES PIXMAN_INCLUDE_DIRS
 )
