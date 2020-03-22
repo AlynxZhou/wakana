@@ -56,10 +56,16 @@ static void wkn_server_new_xdg_surface_notify(
 	wlr_xdg_surface_ping(wlr_xdg_surface);
 
 	struct wkn_client *client = wkn_client_create(server, wlr_xdg_surface);
+	if (wl_list_empty(&server->outputs))
+		return;
 	// Attach to the first output.
-	struct wkn_output *output = wl_container_of(server->outputs.next, output, link);
+	struct wkn_output *output = wl_container_of(
+		server->outputs.next,
+		output,
+		link
+	);
 	client->output = output;
-	wl_list_insert(&server->clients, &client->link);
+	wl_list_insert(&output->clients, &client->link);
 }
 
 static void wkn_server_new_layer_surface_notify(
@@ -73,6 +79,8 @@ static void wkn_server_new_layer_surface_notify(
 	struct wkn_output *output = NULL;
 	if (!wlr_layer_surface->output) {
 		// Just attach it to the first output.
+		if (wl_list_empty(&server->outputs))
+			return;
 		output = wl_container_of(server->outputs.next, output, link);
 		wlr_layer_surface->output = output->wlr_output;
 	} else {
@@ -131,98 +139,12 @@ static void wkn_server_new_output_notify(
 	wlr_output_create_global(wlr_output);
 }
 
-struct wkn_server *wkn_server_create(void)
-{
-	struct wkn_server *server = malloc(sizeof(*server));
-	assert(server);
-
-	server->wl_display = wl_display_create();
-	assert(server->wl_display);
-
-	server->wl_event_loop = wl_display_get_event_loop(server->wl_display);
-	assert(server->wl_event_loop);
-
-	server->wlr_backend = wlr_backend_autocreate(server->wl_display, NULL);
-	assert(server->wlr_backend);
-
-	server->wlr_renderer = wlr_backend_get_renderer(server->wlr_backend);
-	assert(server->wlr_renderer);
-	wlr_renderer_init_wl_display(server->wlr_renderer, server->wl_display);
-
-	return server;
-}
-
-void wkn_server_setup_global(struct wkn_server *server)
-{
-	server->wlr_compositor = wlr_compositor_create(
-		server->wl_display, server->wlr_renderer
-	);
-	assert(server->wlr_compositor);
-
-	server->wlr_xdg_shell = wlr_xdg_shell_create(server->wl_display);
-	assert(server->wlr_xdg_shell);
-
-	server->wlr_layer_shell = wlr_layer_shell_v1_create(server->wl_display);
-	assert(server->wlr_layer_shell);
-
-	server->wlr_output_layout = wlr_output_layout_create();
-	assert(server->wlr_output_layout);
-
-	wlr_data_device_manager_create(server->wl_display);
-	wlr_xdg_output_manager_v1_create(
-		server->wl_display,
-		server->wlr_output_layout
-	);
-
-	server->cursor = wkn_cursor_create(server);
-	assert(server->cursor);
-	wlr_cursor_attach_output_layout(
-		server->cursor->wlr_cursor,
-		server->wlr_output_layout
-	);
-
-	server->seat = wkn_seat_create(server, "seat0");
-	assert(server->seat);
-
-	wl_list_init(&server->outputs);
-	server->new_output.notify = wkn_server_new_output_notify;
-	wl_signal_add(
-		&server->wlr_backend->events.new_output,
-		&server->new_output
-	);
-
-	wl_list_init(&server->clients);
-	server->new_xdg_surface.notify = wkn_server_new_xdg_surface_notify;
-	wl_signal_add(
-		&server->wlr_xdg_shell->events.new_surface,
-		&server->new_xdg_surface
-	);
-	server->new_layer_surface.notify = wkn_server_new_layer_surface_notify;
-	wl_signal_add(
-		&server->wlr_layer_shell->events.new_surface,
-		&server->new_layer_surface
-	);
-
-	wl_list_init(&server->keyboards);
-	server->new_input.notify = wkn_server_new_input_notify;
-	wl_signal_add(
-		&server->wlr_backend->events.new_input,
-		&server->new_input
-	);
-
-	memset(
-		server->key_states,
-		WLR_KEY_RELEASED,
-		sizeof(server->key_states)
-	);
-}
-
 void wkn_server_move_focused_client(struct wkn_server *server)
 {
 	struct wkn_client *client = server->focused_client;
 	struct wkn_cursor *cursor = server->cursor;
-	double dx = server->request_cursor_x - cursor->wlr_cursor->x;
-	double dy = server->request_cursor_y - cursor->wlr_cursor->y;
+	int dx = server->request_cursor_x - cursor->wlr_cursor->x;
+	int dy = server->request_cursor_y - cursor->wlr_cursor->y;
 	client->rect.x = server->request_rect.x - dx;
 	client->rect.y = server->request_rect.y - dy;
 }
@@ -231,8 +153,8 @@ void wkn_server_resize_focused_client(struct wkn_server *server)
 {
 	struct wkn_client *client = server->focused_client;
 	struct wkn_cursor *cursor = server->cursor;
-	double dx = server->request_cursor_x - cursor->wlr_cursor->x;
-	double dy = server->request_cursor_y - cursor->wlr_cursor->y;
+	int dx = server->request_cursor_x - cursor->wlr_cursor->x;
+	int dy = server->request_cursor_y - cursor->wlr_cursor->y;
 	struct wkn_rect rect;
 	if (server->request_resize_edges & WLR_EDGE_LEFT) {
 		rect.x = server->request_rect.x - dx;
@@ -297,31 +219,103 @@ bool wkn_server_handle_keybindings(struct wkn_server *server)
 
 struct wkn_client *wkn_server_find_client_at(
 	struct wkn_server *server,
-	double layout_x,
-	double layout_y
+	int layout_x,
+	int layout_y
 )
 {
-	struct wkn_client *client;
-	wl_list_for_each(client, &server->clients, link) {
-		double client_relative_x = layout_x - client->rect.x;
-		double client_relative_y = layout_y - client->rect.y;
-		// Ugly api needs this...I don't need them.
-		// I have submitted a PR to prevent wlr_xdg_surface_surface_at to assign it when passing NULL.
-		// It has been merged.
-		// TODO: Use NULL when wlroots updated.
-		double _sx;
-		double _sy;
-		struct wlr_surface *wlr_surface = wlr_xdg_surface_surface_at(
-			client->wlr_xdg_surface,
-			client_relative_x,
-			client_relative_y,
-			&_sx,
-			&_sy
-		);
-		if (wlr_surface)
-			return client;
+	struct wkn_client *client = NULL;
+	struct wkn_output *output;
+	wl_list_for_each(output, &server->outputs, link) {
+		client = wkn_output_find_client_at(output, layout_x, layout_y);
+		if (client != NULL)
+			break;
 	}
-	return NULL;
+	return client;
+}
+
+struct wkn_server *wkn_server_create(void)
+{
+	struct wkn_server *server = malloc(sizeof(*server));
+	assert(server);
+
+	server->wl_display = wl_display_create();
+	assert(server->wl_display);
+
+	server->wl_event_loop = wl_display_get_event_loop(server->wl_display);
+	assert(server->wl_event_loop);
+
+	server->wlr_backend = wlr_backend_autocreate(server->wl_display, NULL);
+	assert(server->wlr_backend);
+
+	server->wlr_renderer = wlr_backend_get_renderer(server->wlr_backend);
+	assert(server->wlr_renderer);
+	wlr_renderer_init_wl_display(server->wlr_renderer, server->wl_display);
+
+	return server;
+}
+
+void wkn_server_setup_global(struct wkn_server *server)
+{
+	server->wlr_compositor = wlr_compositor_create(
+		server->wl_display, server->wlr_renderer
+	);
+	assert(server->wlr_compositor);
+
+	server->wlr_xdg_shell = wlr_xdg_shell_create(server->wl_display);
+	assert(server->wlr_xdg_shell);
+
+	server->wlr_layer_shell = wlr_layer_shell_v1_create(server->wl_display);
+	assert(server->wlr_layer_shell);
+
+	server->wlr_output_layout = wlr_output_layout_create();
+	assert(server->wlr_output_layout);
+
+	wlr_data_device_manager_create(server->wl_display);
+	wlr_xdg_output_manager_v1_create(
+		server->wl_display,
+		server->wlr_output_layout
+	);
+
+	server->cursor = wkn_cursor_create(server);
+	assert(server->cursor);
+	wlr_cursor_attach_output_layout(
+		server->cursor->wlr_cursor,
+		server->wlr_output_layout
+	);
+
+	server->seat = wkn_seat_create(server, "seat0");
+	assert(server->seat);
+
+	wl_list_init(&server->outputs);
+	server->new_output.notify = wkn_server_new_output_notify;
+	wl_signal_add(
+		&server->wlr_backend->events.new_output,
+		&server->new_output
+	);
+
+	server->new_xdg_surface.notify = wkn_server_new_xdg_surface_notify;
+	wl_signal_add(
+		&server->wlr_xdg_shell->events.new_surface,
+		&server->new_xdg_surface
+	);
+	server->new_layer_surface.notify = wkn_server_new_layer_surface_notify;
+	wl_signal_add(
+		&server->wlr_layer_shell->events.new_surface,
+		&server->new_layer_surface
+	);
+
+	wl_list_init(&server->keyboards);
+	server->new_input.notify = wkn_server_new_input_notify;
+	wl_signal_add(
+		&server->wlr_backend->events.new_input,
+		&server->new_input
+	);
+
+	memset(
+		server->key_states,
+		WLR_KEY_RELEASED,
+		sizeof(server->key_states)
+	);
 }
 
 void wkn_server_destroy(struct wkn_server *server)
@@ -346,13 +340,11 @@ void wkn_server_destroy(struct wkn_server *server)
 		wkn_seat_destroy(server->seat);
 	if (!wl_list_empty(&server->outputs)) {
 		struct wkn_output *output;
-		wl_list_for_each(output, &server->outputs, link)
+		struct wkn_output *tmp;
+		wl_list_for_each_safe(output, tmp, &server->outputs, link) {
+			wl_list_remove(&output->link);
 			wkn_output_destroy(output);
-	}
-	if (!wl_list_empty(&server->clients)) {
-		struct wkn_client *client;
-		wl_list_for_each(client, &server->clients, link)
-			wkn_client_destroy(client);
+		}
 	}
 	if (!wl_list_empty(&server->keyboards)) {
 		struct wkn_keyboard *keyboard;

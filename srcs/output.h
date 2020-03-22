@@ -17,6 +17,7 @@ struct wkn_output {
 	struct wl_listener destroy;
 	struct wl_listener frame;
 	struct wl_list layer_surfaces[LAYER_NUMBER];
+	struct wl_list clients;
 	// wl_list requires this for item.
 	struct wl_list link;
 };
@@ -24,6 +25,11 @@ struct wkn_output {
 void wkn_output_arrange_layer_surfaces(
 	struct wkn_output *output,
 	enum zwlr_layer_shell_v1_layer layer
+);
+struct wkn_client *wkn_output_find_client_at(
+	struct wkn_output *output,
+	int layout_x,
+	int layout_y
 );
 struct wkn_output *wkn_output_create(
 	struct wkn_server *server,

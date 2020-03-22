@@ -37,15 +37,10 @@ struct wkn_server {
 	uint32_t request_resize_edges;
 	struct wl_listener new_output;
 	struct wl_list outputs;
+	struct wl_list keyboards;
 	struct wl_listener new_xdg_surface;
 	struct wl_listener new_layer_surface;
-	struct wl_list clients;
-	struct wl_list layers;
 	struct wl_listener new_input;
-	struct wl_list keyboards;
-	void *png_data;
-	uint32_t png_width;
-	uint32_t png_height;
 	enum wlr_key_state key_states[KEYCODE_NUMS];
 };
 
@@ -61,8 +56,8 @@ void wkn_server_update_keys(
 bool wkn_server_handle_keybindings(struct wkn_server *server);
 struct wkn_client *wkn_server_find_client_at(
 	struct wkn_server *server,
-	double layout_x,
-	double layout_y
+	int layout_x,
+	int layout_y
 );
 void wkn_server_destroy(struct wkn_server *server);
 

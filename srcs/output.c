@@ -239,7 +239,7 @@ static void wkn_output_frame_notify(struct wl_listener *listener, void *data)
 	}
 
 	struct wkn_client *client;
-	wl_list_for_each_reverse(client, &server->clients, link) {
+	wl_list_for_each_reverse(client, &output->clients, link) {
 		if (!client->mapped)
 			continue;
 		struct render_data rdata = {
@@ -281,6 +281,35 @@ static void wkn_output_frame_notify(struct wl_listener *listener, void *data)
 	wlr_output_commit(wlr_output);
 }
 
+struct wkn_client *wkn_output_find_client_at(
+	struct wkn_output *output,
+	int layout_x,
+	int layout_y
+)
+{
+	struct wkn_client *client;
+	wl_list_for_each(client, &output->clients, link) {
+		double client_relative_x = layout_x - client->rect.x;
+		double client_relative_y = layout_y - client->rect.y;
+		// Ugly api needs this...I don't need them.
+		// I have submitted a PR to prevent wlr_xdg_surface_surface_at to assign it when passing NULL.
+		// It has been merged.
+		// TODO: Use NULL when wlroots updated.
+		double _sx;
+		double _sy;
+		struct wlr_surface *wlr_surface = wlr_xdg_surface_surface_at(
+			client->wlr_xdg_surface,
+			client_relative_x,
+			client_relative_y,
+			&_sx,
+			&_sy
+		);
+		if (wlr_surface != NULL)
+			return client;
+	}
+	return NULL;
+}
+
 struct wkn_output *wkn_output_create(
 	struct wkn_server *server,
 	struct wlr_output *wlr_output
@@ -294,8 +323,9 @@ struct wkn_output *wkn_output_create(
 	wl_signal_add(&wlr_output->events.destroy, &output->destroy);
 	output->frame.notify = wkn_output_frame_notify;
 	wl_signal_add(&wlr_output->events.frame, &output->frame);
+	wl_list_init(&output->clients);
 	for (int i = 0; i < LAYER_NUMBER; ++i)
-		wl_list_init(&(output->layer_surfaces[i]));
+		wl_list_init(&output->layer_surfaces[i]);
 	return output;
 }
 
@@ -303,5 +333,13 @@ void wkn_output_destroy(struct wkn_output *output)
 {
 	if (!output)
 		return;
+	if (!wl_list_empty(&output->clients)) {
+		struct wkn_client *client;
+		struct wkn_client *tmp;
+		wl_list_for_each_safe(client, tmp, &output->clients, link) {
+			wl_list_remove(&client->link);
+			wkn_client_destroy(client);
+		}
+	}
 	free(output);
 }
