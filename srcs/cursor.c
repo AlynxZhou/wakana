@@ -6,6 +6,7 @@ static void wkn_cursor_process_motion(struct wkn_cursor *cursor, uint32_t time)
 {
 	struct wkn_server *server = cursor->server;
 	struct wkn_seat *seat = server->seat;
+	// printf("time: %d\n", time);
 	if (cursor->state == WKN_CURSOR_MOVE) {
 		wkn_server_move_focused_client(server);
 		return;

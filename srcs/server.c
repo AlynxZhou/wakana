@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <string.h>
 #define WLR_USE_UNSTABLE
+#include <wlr/backend/session.h>
 #include <wlr/types/wlr_data_device.h>
 #include <wlr/types/wlr_input_device.h>
 #include <wlr/types/wlr_xdg_output_v1.h>
@@ -124,12 +125,8 @@ static void wkn_server_new_output_notify(
 	wlr_output_create_global(wlr_output);
 	// See https://gitlab.freedesktop.org/wayland/wayland/blob/master/src/wayland-util.h#L231 for wl_list.
 	if (!wl_list_empty(&wlr_output->modes)) {
-		// Get first output mode here.
-		struct wlr_output_mode *mode = wl_container_of(
-			wlr_output->modes.prev, mode, link
-		);
-		// I personally think using wl_list_for_each and break is also enough.
-		// But wl_list_for_each internally call wl_container_of.
+		// Get preferred output mode here.
+		struct wlr_output_mode *mode = wlr_output_preferred_mode(wlr_output);
 		wlr_output_set_mode(wlr_output, mode);
 	}
 
@@ -246,16 +243,20 @@ struct wkn_server *wkn_server_create(void)
 
 	server->wlr_backend = wlr_backend_autocreate(server->wl_display, NULL);
 	assert(server->wlr_backend);
-
-	server->wlr_renderer = wlr_backend_get_renderer(server->wlr_backend);
-	assert(server->wlr_renderer);
-	wlr_renderer_init_wl_display(server->wlr_renderer, server->wl_display);
+	if (server->wlr_backend == NULL) {
+		wkn_logger_error("Failed to create backend.\n");
+		exit(EXIT_FAILURE);
+	}
 
 	return server;
 }
 
-void wkn_server_setup_global(struct wkn_server *server)
+void wkn_server_setup(struct wkn_server *server)
 {
+	server->wlr_renderer = wlr_backend_get_renderer(server->wlr_backend);
+	assert(server->wlr_renderer);
+	wlr_renderer_init_wl_display(server->wlr_renderer, server->wl_display);
+
 	server->wlr_compositor = wlr_compositor_create(
 		server->wl_display, server->wlr_renderer
 	);

@@ -190,6 +190,11 @@ static void wkn_output_render_layer_surface(
 	wlr_surface_send_frame_done(wlr_surface, when);
 }
 
+static void wkn_output_damage_frame_notify(struct wl_listener *listener, void *data)
+{
+	printf("Damage!\n");
+}
+
 static void wkn_output_frame_notify(struct wl_listener *listener, void *data)
 {
 	struct wkn_output *output = wl_container_of(listener, output, frame);
@@ -199,7 +204,7 @@ static void wkn_output_frame_notify(struct wl_listener *listener, void *data)
 
 	if (!wlr_output_attach_render(wlr_output, NULL))
 		return;
-
+	printf("Frame!\n");
 	struct timespec now;
 	clock_gettime(CLOCK_MONOTONIC, &now);
 	int width;
@@ -319,10 +324,14 @@ struct wkn_output *wkn_output_create(
 	assert(output);
 	output->server = server;
 	output->wlr_output = wlr_output;
+	output->damage = wlr_output_damage_create(wlr_output);
+	wlr_output_enable(wlr_output, true);
 	output->destroy.notify = wkn_output_destroy_notify;
 	wl_signal_add(&wlr_output->events.destroy, &output->destroy);
 	output->frame.notify = wkn_output_frame_notify;
 	wl_signal_add(&wlr_output->events.frame, &output->frame);
+	output->damage_frame.notify = wkn_output_damage_frame_notify;
+	wl_signal_add(&output->damage->events.frame, &output->damage_frame);
 	wl_list_init(&output->clients);
 	for (int i = 0; i < LAYER_NUMBER; ++i)
 		wl_list_init(&output->layer_surfaces[i]);

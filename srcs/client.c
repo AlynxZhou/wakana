@@ -72,19 +72,6 @@ static void wkn_client_request(
 	}
 }
 
-static void wkn_client_map_notify(struct wl_listener *listener, void *data)
-{
-	struct wkn_client *client = wl_container_of(listener, client, map);
-	client->mapped = true;
-	wkn_client_focus(client);
-}
-
-static void wkn_client_unmap_notify(struct wl_listener *listener, void *data)
-{
-	struct wkn_client *client = wl_container_of(listener, client, unmap);
-	client->mapped = false;
-}
-
 static void wkn_client_destroy_notify(struct wl_listener *listener, void *data)
 {
 	struct wkn_client *client = wl_container_of(listener, client, destroy);
@@ -102,6 +89,7 @@ static void wkn_client_request_move_notify(
 		client,
 		request_move
 	);
+	// struct wlr_xdg_toplevel_move_event *e = data;
 	wkn_client_request(client, WKN_CURSOR_MOVE, 0);
 }
 
@@ -197,6 +185,45 @@ static void wkn_client_request_minimize_notify(
 	client->minimized = !client->minimized;
 }
 
+static void wkn_client_commit_notify(struct wl_listener *listener, void *data)
+{
+
+}
+
+static void wkn_client_map_notify(struct wl_listener *listener, void *data)
+{
+	struct wkn_client *client = wl_container_of(listener, client, map);
+	client->mapped = true;
+
+	client->request_move.notify = wkn_client_request_move_notify;
+	wl_signal_add(&client->wlr_xdg_toplevel->events.request_move, &client->request_move);
+	client->request_resize.notify = wkn_client_request_resize_notify;
+	wl_signal_add(&client->wlr_xdg_toplevel->events.request_resize, &client->request_resize);
+	client->request_fullscreen.notify = wkn_client_request_fullscreen_notify;
+	wl_signal_add(&client->wlr_xdg_toplevel->events.request_fullscreen, &client->request_fullscreen);
+	client->request_maximize.notify = wkn_client_request_maximize_notify;
+	wl_signal_add(&client->wlr_xdg_toplevel->events.request_maximize, &client->request_maximize);
+	client->request_minimize.notify = wkn_client_request_minimize_notify;
+	wl_signal_add(&client->wlr_xdg_toplevel->events.request_minimize, &client->request_minimize);
+	client->commit.notify = wkn_client_commit_notify;
+	wl_signal_add(&client->wlr_xdg_surface->surface->events.commit, &client->commit);
+
+	wkn_client_focus(client);
+}
+
+static void wkn_client_unmap_notify(struct wl_listener *listener, void *data)
+{
+	struct wkn_client *client = wl_container_of(listener, client, unmap);
+	client->mapped = false;
+
+	wl_list_remove(&client->request_move.link);
+	wl_list_remove(&client->request_resize.link);
+	wl_list_remove(&client->request_minimize.link);
+	wl_list_remove(&client->request_maximize.link);
+	wl_list_remove(&client->request_fullscreen.link);
+	wl_list_remove(&client->commit.link);
+}
+
 struct wkn_client *wkn_client_create(
 	struct wkn_server *server,
 	struct wlr_xdg_surface *wlr_xdg_surface
@@ -222,16 +249,6 @@ struct wkn_client *wkn_client_create(
 	client->destroy.notify = wkn_client_destroy_notify;
 	wl_signal_add(&wlr_xdg_surface->events.destroy, &client->destroy);
 
-	client->request_move.notify = wkn_client_request_move_notify;
-	wl_signal_add(&client->wlr_xdg_toplevel->events.request_move, &client->request_move);
-	client->request_resize.notify = wkn_client_request_resize_notify;
-	wl_signal_add(&client->wlr_xdg_toplevel->events.request_resize, &client->request_resize);
-	client->request_fullscreen.notify = wkn_client_request_fullscreen_notify;
-	wl_signal_add(&client->wlr_xdg_toplevel->events.request_fullscreen, &client->request_fullscreen);
-	client->request_maximize.notify = wkn_client_request_maximize_notify;
-	wl_signal_add(&client->wlr_xdg_toplevel->events.request_maximize, &client->request_maximize);
-	client->request_minimize.notify = wkn_client_request_minimize_notify;
-	wl_signal_add(&client->wlr_xdg_toplevel->events.request_minimize, &client->request_minimize);
 	return client;
 }
 

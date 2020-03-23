@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
+#include <wlr/util/log.h>
 #include "logger.h"
 #include "server.h"
 #include "output.h"
@@ -38,6 +39,7 @@ int wkn_drop_permission(void)
 
 int main(int argc, char *argv[])
 {
+	wlr_log_init(WLR_DEBUG, NULL);
 	struct wkn_server *server = wkn_server_create();
 
 	// We need permission to create backends.
@@ -45,15 +47,15 @@ int main(int argc, char *argv[])
 	if (wkn_drop_permission() < 0)
 		exit(EXIT_FAILURE);
 
-	wkn_server_setup_global(server);
+	wkn_server_setup(server);
 
 	const char *socket = wl_display_add_socket_auto(server->wl_display);
 	assert(socket);
 
 	if (!wlr_backend_start(server->wlr_backend)) {
-		wkn_logger_error("Failed to start wlr backend!\n");
+		wkn_logger_error("Failed to start backend!\n");
 		wkn_server_destroy(server);
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 
 	wl_display_init_shm(server->wl_display);
