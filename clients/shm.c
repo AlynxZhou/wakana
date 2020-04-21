@@ -375,6 +375,9 @@ int main(int argc, char *argv[])
 	wl_shm_pool_destroy(shm_pool);
 	close(fd);
 
+	// Wait for configure.
+	wl_display_roundtrip(client.display);
+
 	// Trigger drawing.
 	wl_surface_damage(client.surface, 0, 0, client.width, client.height);
 	redraw(&client, NULL, 0);

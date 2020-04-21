@@ -17,6 +17,25 @@ set_source_files_properties(
 )
 
 add_executable(
+	"wakana-shm"
+	"shm.c"
+	${XDG_SHELL_PROTOCOL_CLIENT_HEADER}
+	${XDG_SHELL_PROTOCOL_SOURCE}
+)
+add_dependencies("wakana-shm" "xdg-shell-protocol")
+target_compile_definitions(
+	"wakana-shm"
+	PUBLIC
+	${WAYLAND_CLIENT_DEFINITIONS}
+	${WAYLAND_EGL_DEFINITIONS}
+)
+target_link_libraries(
+	"wakana-shm"
+	${WAYLAND_CLIENT_LIBRARIES}
+	${WAYLAND_EGL_LIBRARIES}
+)
+
+add_executable(
 	"wakana-egl"
 	"egl.c"
 	${XDG_SHELL_PROTOCOL_CLIENT_HEADER}
