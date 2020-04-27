@@ -10,7 +10,8 @@ static void wkn_seat_request_set_cursor_notify(
 	struct wkn_seat *seat = wl_container_of(listener, seat, request_set_cursor);
 	struct wkn_server *server = seat->server;
 	struct wlr_seat_pointer_request_set_cursor_event *event = data;
-	struct wlr_seat_client *focused_client = seat->wlr_seat->pointer_state.focused_client;
+	struct wlr_seat_client *focused_client =
+		seat->wlr_seat->pointer_state.focused_client;
 	if (focused_client == event->seat_client)
 		wlr_cursor_set_surface(
 			server->cursor->wlr_cursor,

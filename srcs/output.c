@@ -345,7 +345,12 @@ void wkn_output_destroy(struct wkn_output *output)
 	if (!wl_list_empty(&output->xdg_surfaces)) {
 		struct wkn_xdg_surface *xdg_surface;
 		struct wkn_xdg_surface *tmp;
-		wl_list_for_each_safe(xdg_surface, tmp, &output->xdg_surfaces, link) {
+		wl_list_for_each_safe(
+			xdg_surface,
+			tmp,
+			&output->xdg_surfaces,
+			link
+		) {
 			wl_list_remove(&xdg_surface->link);
 			wkn_xdg_surface_destroy(xdg_surface);
 		}

@@ -2,7 +2,10 @@
 #include <stdlib.h>
 #include "layer-surface.h"
 
-void wkn_layer_surface_new_popup_notify(struct wl_listener *listener, void *data)
+void wkn_layer_surface_new_popup_notify(
+	struct wl_listener *listener,
+	void *data
+)
 {
 
 }
@@ -52,13 +55,18 @@ struct wkn_layer_surface *wkn_layer_surface_create(
 	struct wlr_layer_surface_v1 *wlr_layer_surface
 )
 {
-	struct wkn_layer_surface *layer_surface = malloc(sizeof(*layer_surface));
+	struct wkn_layer_surface *layer_surface = malloc(
+		sizeof(*layer_surface)
+	);
 	assert(layer_surface);
 	layer_surface->server = server;
 	layer_surface->wlr_layer_surface = wlr_layer_surface;
 
 	layer_surface->destroy.notify = wkn_layer_surface_destroy_notify;
-	wl_signal_add(&wlr_layer_surface->events.destroy, &layer_surface->destroy);
+	wl_signal_add(
+		&wlr_layer_surface->events.destroy,
+		&layer_surface->destroy
+	);
 	layer_surface->map.notify = wkn_layer_surface_map_notify;
 	wl_signal_add(&wlr_layer_surface->events.map, &layer_surface->map);
 	layer_surface->unmap.notify = wkn_layer_surface_unmap_notify;

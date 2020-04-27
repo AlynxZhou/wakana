@@ -27,14 +27,18 @@ static void wkn_cursor_process_motion(struct wkn_cursor *cursor, uint32_t time)
 		wlr_seat_pointer_clear_focus(seat->wlr_seat);
 		return;
 	}
-	double xdg_surface_relative_x = cursor->wlr_cursor->x - xdg_surface->rect.x;
-	double xdg_surface_relative_y = cursor->wlr_cursor->y - xdg_surface->rect.y;
+	double xdg_surface_relative_x =
+		cursor->wlr_cursor->x - xdg_surface->rect.x;
+	double xdg_surface_relative_y =
+		cursor->wlr_cursor->y - xdg_surface->rect.y;
 	double sub_x;
 	double sub_y;
 	struct wlr_surface *wlr_surface = wlr_xdg_surface_surface_at(
 		xdg_surface->wlr_xdg_surface,
-		xdg_surface_relative_x, xdg_surface_relative_y,
-		&sub_x, &sub_y
+		xdg_surface_relative_x,
+		xdg_surface_relative_y,
+		&sub_x,
+		&sub_y
 	);
 	if (wlr_surface) {
 		wlr_seat_pointer_notify_enter(
@@ -42,10 +46,15 @@ static void wkn_cursor_process_motion(struct wkn_cursor *cursor, uint32_t time)
 			wlr_surface,
 			sub_x, sub_y
 		);
-		if (seat->wlr_seat->pointer_state.focused_surface == wlr_surface)
+		if (
+			seat->wlr_seat->pointer_state.focused_surface ==
+				wlr_surface
+		)
 			wlr_seat_pointer_notify_motion(
 				seat->wlr_seat,
-				time, sub_x, sub_y
+				time,
+				sub_x,
+				sub_y
 			);
 	} else {
 		wlr_seat_pointer_clear_focus(seat->wlr_seat);
@@ -58,17 +67,31 @@ static void wkn_cursor_motion_notify(struct wl_listener *listener, void *data)
 	// struct wkn_server *server = cursor->server;
 	struct wlr_event_pointer_motion *event = data;
 
-	wlr_cursor_move(cursor->wlr_cursor, event->device, event->delta_x, event->delta_y);
+	wlr_cursor_move(
+		cursor->wlr_cursor,
+		event->device,
+		event->delta_x,
+		event->delta_y
+	);
 	wkn_cursor_process_motion(cursor, event->time_msec);
 }
 
 static void wkn_cursor_motion_absolute_notify(struct wl_listener *listener, void *data)
 {
-	struct wkn_cursor *cursor = wl_container_of(listener, cursor, motion_absolute);
+	struct wkn_cursor *cursor = wl_container_of(
+		listener,
+		cursor,
+		motion_absolute
+	);
 	// struct wkn_server *server = cursor->server;
 	struct wlr_event_pointer_motion_absolute *event = data;
 
-	wlr_cursor_warp_absolute(cursor->wlr_cursor, event->device, event->x, event->y);
+	wlr_cursor_warp_absolute(
+		cursor->wlr_cursor,
+		event->device,
+		event->x,
+		event->y
+	);
 	wkn_cursor_process_motion(cursor, event->time_msec);
 }
 
@@ -78,7 +101,12 @@ static void wkn_cursor_button_notify(struct wl_listener *listener, void *data)
 	struct wkn_server *server = cursor->server;
 	struct wlr_event_pointer_button *event = data;
 
-	wlr_seat_pointer_notify_button(server->seat->wlr_seat, event->time_msec, event->button, event->state);
+	wlr_seat_pointer_notify_button(
+		server->seat->wlr_seat,
+		event->time_msec,
+		event->button,
+		event->state
+	);
 	// double sx;
 	// double sy;
 	// struct wlr_seat *wlr_seat = server->seat->wlr_seat;
@@ -133,7 +161,10 @@ struct wkn_cursor *wkn_cursor_create(struct wkn_server *server)
 	cursor->motion.notify = wkn_cursor_motion_notify;
 	wl_signal_add(&cursor->wlr_cursor->events.motion, &cursor->motion);
 	cursor->motion_absolute.notify = wkn_cursor_motion_absolute_notify;
-	wl_signal_add(&cursor->wlr_cursor->events.motion_absolute, &cursor->motion_absolute);
+	wl_signal_add(
+		&cursor->wlr_cursor->events.motion_absolute,
+		&cursor->motion_absolute
+	);
 	cursor->button.notify = wkn_cursor_button_notify;
 	wl_signal_add(&cursor->wlr_cursor->events.button, &cursor->button);
 	cursor->axis.notify = wkn_cursor_axis_notify;

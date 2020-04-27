@@ -25,11 +25,17 @@ static void wkn_server_new_input_notify(
 	struct wlr_input_device *device = data;
 	switch (device->type) {
 	case WLR_INPUT_DEVICE_POINTER: {
-		wlr_cursor_attach_input_device(server->cursor->wlr_cursor, device);
+		wlr_cursor_attach_input_device(
+			server->cursor->wlr_cursor,
+			device
+		);
 		break;
 	}
 	case WLR_INPUT_DEVICE_KEYBOARD: {
-		struct wkn_keyboard *keyboard = wkn_keyboard_create(server, device);
+		struct wkn_keyboard *keyboard = wkn_keyboard_create(
+			server,
+			device
+		);
 		wl_list_insert(&server->keyboards, &keyboard->link);
 		break;
 	}
@@ -47,7 +53,11 @@ static void wkn_server_new_xdg_surface_notify(
 	void *data
 )
 {
-	struct wkn_server *server = wl_container_of(listener, server, new_xdg_surface);
+	struct wkn_server *server = wl_container_of(
+		listener,
+		server,
+		new_xdg_surface
+	);
 	struct wlr_xdg_surface *wlr_xdg_surface = data;
 
 	if (wlr_xdg_surface->role != WLR_XDG_SURFACE_ROLE_TOPLEVEL) {
@@ -56,7 +66,10 @@ static void wkn_server_new_xdg_surface_notify(
 
 	wlr_xdg_surface_ping(wlr_xdg_surface);
 
-	struct wkn_xdg_surface *xdg_surface = wkn_xdg_surface_create(server, wlr_xdg_surface);
+	struct wkn_xdg_surface *xdg_surface = wkn_xdg_surface_create(
+		server,
+		wlr_xdg_surface
+	);
 	if (wl_list_empty(&server->outputs))
 		return;
 	// Attach to the first output.
@@ -74,7 +87,11 @@ static void wkn_server_new_layer_surface_notify(
 	void *data
 )
 {
-	struct wkn_server *server = wl_container_of(listener, server, new_layer_surface);
+	struct wkn_server *server = wl_container_of(
+		listener,
+		server,
+		new_layer_surface
+	);
 	struct wlr_layer_surface_v1 *wlr_layer_surface = data;
 
 	struct wkn_output *output = NULL;
@@ -223,7 +240,11 @@ struct wkn_xdg_surface *wkn_server_find_xdg_surface_at(
 	struct wkn_xdg_surface *xdg_surface = NULL;
 	struct wkn_output *output;
 	wl_list_for_each(output, &server->outputs, link) {
-		xdg_surface = wkn_output_find_xdg_surface_at(output, layout_x, layout_y);
+		xdg_surface = wkn_output_find_xdg_surface_at(
+			output,
+			layout_x,
+			layout_y
+		);
 		if (xdg_surface != NULL)
 			break;
 	}

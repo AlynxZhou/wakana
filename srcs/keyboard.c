@@ -54,7 +54,10 @@ static void wkn_keyboard_key_notify(struct wl_listener *listener, void *data)
 	wkn_server_update_keys(server, event->keycode, event->state);
 	bool server_handled = wkn_server_handle_keybindings(server);
 	if (!server_handled) {
-		wlr_seat_set_keyboard(seat->wlr_seat, keyboard->wlr_input_device);
+		wlr_seat_set_keyboard(
+			seat->wlr_seat,
+			keyboard->wlr_input_device
+		);
 		wlr_seat_keyboard_notify_key(
 			seat->wlr_seat,
 			event->time_msec,
