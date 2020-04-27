@@ -195,7 +195,7 @@ bool wkn_server_handle_keybindings(struct wkn_server *server)
 	if (server->key_states[KEY_LEFTCTRL] == WLR_KEY_PRESSED &&
 	    server->key_states[KEY_LEFTALT] == WLR_KEY_PRESSED &&
 	    server->key_states[KEY_BACKSPACE] == WLR_KEY_PRESSED) {
-		wkn_logger_debug("Restart!\n");
+		wkn_logger_debug(server->logger, "Restart!\n");
 		// TODO: Restart session.
 		return true;
 	}
@@ -204,7 +204,7 @@ bool wkn_server_handle_keybindings(struct wkn_server *server)
 	    (server->key_states[KEY_LEFTCTRL] == WLR_KEY_PRESSED &&
 	     server->key_states[KEY_LEFTALT] == WLR_KEY_PRESSED &&
 	     server->key_states[KEY_ESC] == WLR_KEY_PRESSED)) {
-		wkn_logger_debug("Exit!\n");
+		wkn_logger_debug(server->logger, "Exit!\n");
 		// TODO: better exit.
 		// wl_display_terminate(server->wl_display);
 		// wkn_server_destroy(server);
@@ -243,16 +243,19 @@ struct wkn_server *wkn_server_create(void)
 
 	server->wlr_backend = wlr_backend_autocreate(server->wl_display, NULL);
 	assert(server->wlr_backend);
-	if (server->wlr_backend == NULL) {
-		wkn_logger_error("Failed to create backend.\n");
-		exit(EXIT_FAILURE);
-	}
 
 	return server;
 }
 
-void wkn_server_setup(struct wkn_server *server)
+void wkn_server_setup(
+	struct wkn_server *server,
+	bool debug,
+	char *logpath
+)
 {
+	server->logger = wkn_logger_create(server, debug, logpath);
+	assert(server->logger);
+
 	server->wlr_renderer = wlr_backend_get_renderer(server->wlr_backend);
 	assert(server->wlr_renderer);
 	wlr_renderer_init_wl_display(server->wlr_renderer, server->wl_display);
@@ -329,6 +332,8 @@ void wkn_server_destroy(struct wkn_server *server)
 	}
 	if (server->wlr_backend)
 		wlr_backend_destroy(server->wlr_backend);
+	if (server->logger)
+		wkn_logger_destroy(server->logger);
 	// if (server->wlr_compositor)
 	// 	wlr_compositor_destroy(server->wlr_compositor);
 	// if (server->wlr_xdg_shell)

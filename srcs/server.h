@@ -14,6 +14,7 @@
 #include <wlr/types/wlr_xdg_shell.h>
 #include <wlr/types/wlr_layer_shell_v1.h>
 #include "wakana.h"
+#include "logger.h"
 #include "client.h"
 #include "layer-surface.h"
 #include "cursor.h"
@@ -23,6 +24,7 @@ struct wkn_server {
 	struct wl_display *wl_display;
 	struct wl_event_loop *wl_event_loop;
 	struct wlr_backend *wlr_backend;
+	struct wkn_logger *logger;
 	struct wlr_renderer *wlr_renderer;
 	struct wlr_compositor *wlr_compositor;
 	struct wlr_xdg_shell *wlr_xdg_shell;
@@ -35,17 +37,21 @@ struct wkn_server {
 	double request_cursor_y;
 	struct wkn_rect request_rect;
 	uint32_t request_resize_edges;
-	struct wl_listener new_output;
 	struct wl_list outputs;
 	struct wl_list keyboards;
+	struct wl_listener new_input;
+	struct wl_listener new_output;
 	struct wl_listener new_xdg_surface;
 	struct wl_listener new_layer_surface;
-	struct wl_listener new_input;
 	enum wlr_key_state key_states[KEYCODE_NUMS];
 };
 
 struct wkn_server *wkn_server_create(void);
-void wkn_server_setup(struct wkn_server *server);
+void wkn_server_setup(
+	struct wkn_server *server,
+	bool debug,
+	char *logpath
+);
 void wkn_server_move_focused_client(struct wkn_server *server);
 void wkn_server_resize_focused_client(struct wkn_server *server);
 void wkn_server_update_keys(

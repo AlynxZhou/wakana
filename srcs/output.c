@@ -192,7 +192,7 @@ static void wkn_output_render_layer_surface(
 
 static void wkn_output_damage_frame_notify(struct wl_listener *listener, void *data)
 {
-	printf("Damage!\n");
+	// printf("Damage!\n");
 }
 
 static void wkn_output_frame_notify(struct wl_listener *listener, void *data)
@@ -204,7 +204,7 @@ static void wkn_output_frame_notify(struct wl_listener *listener, void *data)
 
 	if (!wlr_output_attach_render(wlr_output, NULL))
 		return;
-	printf("Frame!\n");
+	// printf("Frame!\n");
 	struct timespec now;
 	clock_gettime(CLOCK_MONOTONIC, &now);
 	int width;

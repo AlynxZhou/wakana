@@ -135,6 +135,7 @@ static void wkn_client_request_maximize_notify(
 		client,
 		request_maximize
 	);
+	struct wkn_server *server = client->server;
 	struct wkn_output *output = client->output;
 
 	if (!client->mapped)
@@ -143,7 +144,7 @@ static void wkn_client_request_maximize_notify(
 
 	if (!client->maximized) {
 		// Going maximized, save state.
-		wkn_logger_debug("Maximize\n");
+		wkn_logger_debug(server->logger, "Maximize\n");
 
 		client->prev_rect = client->rect;
 
@@ -158,7 +159,7 @@ static void wkn_client_request_maximize_notify(
 		wlr_xdg_toplevel_set_size(client->wlr_xdg_surface, w, h);
 	} else {
 		// Going unmaximized, load state.
-		wkn_logger_debug("Unmaximize!\n");
+		wkn_logger_debug(server->logger, "Unmaximize!\n");
 
 		client->rect = client->prev_rect;
 		wlr_xdg_toplevel_set_size(client->wlr_xdg_surface, client->rect.w, client->rect.h);
