@@ -207,18 +207,29 @@ static void wkn_xdg_surface_request_minimize_notify(
 	xdg_surface->minimized = !xdg_surface->minimized;
 }
 
-static void wkn_xdg_surface_commit_notify(
-	struct wl_listener *listener,
-	void *data
-)
-{
-
-}
+// static void wkn_xdg_surface_ack_configure_notify(
+// 	struct wl_listener *listener,
+// 	void *data
+// )
+// {
+// 	struct wkn_xdg_surface *xdg_surface = wl_container_of(
+// 		listener,
+// 		xdg_surface,
+// 		ack_configure
+// 	);
+// 	xdg_surface->rect.w = xdg_surface->wlr_xdg_surface->geometry.width;
+// 	xdg_surface->rect.h = xdg_surface->wlr_xdg_surface->geometry.height;
+// }
 
 static void wkn_xdg_surface_map_notify(struct wl_listener *listener, void *data)
 {
 	struct wkn_xdg_surface *xdg_surface = wl_container_of(listener, xdg_surface, map);
 	xdg_surface->mapped = true;
+
+	xdg_surface->rect.x = xdg_surface->wlr_xdg_surface->geometry.x;
+	xdg_surface->rect.y = xdg_surface->wlr_xdg_surface->geometry.y;
+	xdg_surface->rect.w = xdg_surface->wlr_xdg_surface->geometry.width;
+	xdg_surface->rect.h = xdg_surface->wlr_xdg_surface->geometry.height;
 
 	xdg_surface->request_move.notify = wkn_xdg_surface_request_move_notify;
 	wl_signal_add(
@@ -245,11 +256,11 @@ static void wkn_xdg_surface_map_notify(struct wl_listener *listener, void *data)
 		&xdg_surface->wlr_xdg_toplevel->events.request_minimize,
 		&xdg_surface->request_minimize
 	);
-	xdg_surface->commit.notify = wkn_xdg_surface_commit_notify;
-	wl_signal_add(
-		&xdg_surface->wlr_xdg_surface->surface->events.commit,
-		&xdg_surface->commit
-	);
+	// xdg_surface->ack_configure.notify = wkn_xdg_surface_ack_configure_notify;
+	// wl_signal_add(
+	// 	&xdg_surface->wlr_xdg_surface->events.ack_configure,
+	// 	&xdg_surface->ack_configure
+	// );
 
 	wkn_xdg_surface_focus(xdg_surface);
 }
@@ -268,7 +279,7 @@ static void wkn_xdg_surface_unmap_notify(struct wl_listener *listener, void *dat
 	wl_list_remove(&xdg_surface->request_minimize.link);
 	wl_list_remove(&xdg_surface->request_maximize.link);
 	wl_list_remove(&xdg_surface->request_fullscreen.link);
-	wl_list_remove(&xdg_surface->commit.link);
+	// wl_list_remove(&xdg_surface->ack_configure.link);
 }
 
 struct wkn_xdg_surface *wkn_xdg_surface_create(
@@ -281,11 +292,11 @@ struct wkn_xdg_surface *wkn_xdg_surface_create(
 	xdg_surface->server = server;
 	xdg_surface->wlr_xdg_surface = wlr_xdg_surface;
 	xdg_surface->wlr_xdg_toplevel = wlr_xdg_surface->toplevel;
-	xdg_surface->rect.x = 0;
-	xdg_surface->rect.y = 0;
-	xdg_surface->rect.w = xdg_surface->wlr_xdg_toplevel->current.width;
-	xdg_surface->rect.h = xdg_surface->wlr_xdg_toplevel->current.height;
-	xdg_surface->mapped = true;
+	xdg_surface->rect.x = xdg_surface->wlr_xdg_surface->geometry.x;
+	xdg_surface->rect.y = xdg_surface->wlr_xdg_surface->geometry.y;
+	xdg_surface->rect.w = xdg_surface->wlr_xdg_surface->geometry.width;
+	xdg_surface->rect.h = xdg_surface->wlr_xdg_surface->geometry.height;
+	xdg_surface->mapped = false;
 	xdg_surface->minimized = false;
 	xdg_surface->maximized = false;
 

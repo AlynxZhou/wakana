@@ -22,7 +22,7 @@ struct wkn_xdg_surface {
 	struct wl_listener request_fullscreen;
 	struct wl_listener request_maximize;
 	struct wl_listener request_minimize;
-	struct wl_listener commit;
+	struct wl_listener ack_configure;
 
 	bool mapped;
 	bool minimized;
