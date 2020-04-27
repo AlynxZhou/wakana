@@ -15,7 +15,7 @@
 #include <wlr/types/wlr_layer_shell_v1.h>
 #include "wakana.h"
 #include "logger.h"
-#include "client.h"
+#include "xdg-surface.h"
 #include "layer-surface.h"
 #include "cursor.h"
 #include "seat.h"
@@ -32,7 +32,7 @@ struct wkn_server {
 	struct wlr_output_layout *wlr_output_layout;
 	struct wkn_cursor *cursor;
 	struct wkn_seat *seat;
-	struct wkn_client *focused_client;
+	struct wkn_xdg_surface *focused_xdg_surface;
 	double request_cursor_x;
 	double request_cursor_y;
 	struct wkn_rect request_rect;
@@ -52,15 +52,15 @@ void wkn_server_setup(
 	bool debug,
 	char *logpath
 );
-void wkn_server_move_focused_client(struct wkn_server *server);
-void wkn_server_resize_focused_client(struct wkn_server *server);
+void wkn_server_move_focused_xdg_surface(struct wkn_server *server);
+void wkn_server_resize_focused_xdg_surface(struct wkn_server *server);
 void wkn_server_update_keys(
 	struct wkn_server *server,
 	uint32_t keycode,
 	enum wlr_key_state state
 );
 bool wkn_server_handle_keybindings(struct wkn_server *server);
-struct wkn_client *wkn_server_find_client_at(
+struct wkn_xdg_surface *wkn_server_find_xdg_surface_at(
 	struct wkn_server *server,
 	int layout_x,
 	int layout_y

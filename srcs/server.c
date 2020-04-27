@@ -56,7 +56,7 @@ static void wkn_server_new_xdg_surface_notify(
 
 	wlr_xdg_surface_ping(wlr_xdg_surface);
 
-	struct wkn_client *client = wkn_client_create(server, wlr_xdg_surface);
+	struct wkn_xdg_surface *xdg_surface = wkn_xdg_surface_create(server, wlr_xdg_surface);
 	if (wl_list_empty(&server->outputs))
 		return;
 	// Attach to the first output.
@@ -65,8 +65,8 @@ static void wkn_server_new_xdg_surface_notify(
 		output,
 		link
 	);
-	client->output = output;
-	wl_list_insert(&output->clients, &client->link);
+	xdg_surface->output = output;
+	wl_list_insert(&output->xdg_surfaces, &xdg_surface->link);
 }
 
 static void wkn_server_new_layer_surface_notify(
@@ -136,19 +136,19 @@ static void wkn_server_new_output_notify(
 	wlr_output_create_global(wlr_output);
 }
 
-void wkn_server_move_focused_client(struct wkn_server *server)
+void wkn_server_move_focused_xdg_surface(struct wkn_server *server)
 {
-	struct wkn_client *client = server->focused_client;
+	struct wkn_xdg_surface *xdg_surface = server->focused_xdg_surface;
 	struct wkn_cursor *cursor = server->cursor;
 	int dx = server->request_cursor_x - cursor->wlr_cursor->x;
 	int dy = server->request_cursor_y - cursor->wlr_cursor->y;
-	client->rect.x = server->request_rect.x - dx;
-	client->rect.y = server->request_rect.y - dy;
+	xdg_surface->rect.x = server->request_rect.x - dx;
+	xdg_surface->rect.y = server->request_rect.y - dy;
 }
 
-void wkn_server_resize_focused_client(struct wkn_server *server)
+void wkn_server_resize_focused_xdg_surface(struct wkn_server *server)
 {
-	struct wkn_client *client = server->focused_client;
+	struct wkn_xdg_surface *xdg_surface = server->focused_xdg_surface;
 	struct wkn_cursor *cursor = server->cursor;
 	int dx = server->request_cursor_x - cursor->wlr_cursor->x;
 	int dy = server->request_cursor_y - cursor->wlr_cursor->y;
@@ -174,9 +174,9 @@ void wkn_server_resize_focused_client(struct wkn_server *server)
 		rect.h = server->request_rect.h;
 	}
 
-	wlr_xdg_toplevel_set_size(client->wlr_xdg_surface, rect.w, rect.h);
-	// Better to wait for the client's redrawing then do recompositing.
-	client->rect = rect;
+	wlr_xdg_toplevel_set_size(xdg_surface->wlr_xdg_surface, rect.w, rect.h);
+	// Better to wait for the xdg_surface's redrawing then do recompositing.
+	xdg_surface->rect = rect;
 }
 
 void wkn_server_update_keys(
@@ -214,20 +214,20 @@ bool wkn_server_handle_keybindings(struct wkn_server *server)
 	return false;
 }
 
-struct wkn_client *wkn_server_find_client_at(
+struct wkn_xdg_surface *wkn_server_find_xdg_surface_at(
 	struct wkn_server *server,
 	int layout_x,
 	int layout_y
 )
 {
-	struct wkn_client *client = NULL;
+	struct wkn_xdg_surface *xdg_surface = NULL;
 	struct wkn_output *output;
 	wl_list_for_each(output, &server->outputs, link) {
-		client = wkn_output_find_client_at(output, layout_x, layout_y);
-		if (client != NULL)
+		xdg_surface = wkn_output_find_xdg_surface_at(output, layout_x, layout_y);
+		if (xdg_surface != NULL)
 			break;
 	}
-	return client;
+	return xdg_surface;
 }
 
 struct wkn_server *wkn_server_create(void)

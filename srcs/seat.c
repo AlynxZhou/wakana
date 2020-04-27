@@ -11,12 +11,16 @@ static void wkn_seat_request_set_cursor_notify(
 	struct wkn_server *server = seat->server;
 	struct wlr_seat_pointer_request_set_cursor_event *event = data;
 	struct wlr_seat_client *focused_client = seat->wlr_seat->pointer_state.focused_client;
-	if (focused_client == event->seat_client) {
-		wlr_cursor_set_surface(server->cursor->wlr_cursor, event->surface, event->hotspot_x, event->hotspot_y);
-	}
+	if (focused_client == event->seat_client)
+		wlr_cursor_set_surface(
+			server->cursor->wlr_cursor,
+			event->surface,
+			event->hotspot_x,
+			event->hotspot_y
+		);
 }
 
-struct wkn_seat *wkn_seat_create(struct wkn_server *server, const char name[])
+struct wkn_seat *wkn_seat_create(struct wkn_server *server, char *name)
 {
 	struct wkn_seat *seat = malloc(sizeof(*seat));
 	assert(seat);

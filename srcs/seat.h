@@ -14,7 +14,7 @@ struct wkn_seat {
 	struct wl_list keyboards;
 };
 
-struct wkn_seat *wkn_seat_create(struct wkn_server *server, const char name[]);
+struct wkn_seat *wkn_seat_create(struct wkn_server *server, char *name);
 void wkn_seat_destroy(struct wkn_seat *seat);
 
 #endif

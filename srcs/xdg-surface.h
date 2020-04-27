@@ -1,5 +1,5 @@
-#ifndef __CLIENT_H__
-#define __CLIENT_H__
+#ifndef __XDG_SURFACE_H__
+#define __XDG_SURFACE_H__
 
 #include <wayland-server.h>
 #include <wayland-util.h>
@@ -9,7 +9,7 @@
 #include "wakana.h"
 #include "server.h"
 
-struct wkn_client {
+struct wkn_xdg_surface {
 	struct wkn_server *server;
 	struct wkn_output *output;
 	struct wlr_xdg_surface *wlr_xdg_surface;
@@ -33,11 +33,11 @@ struct wkn_client {
 	struct wl_list link;
 };
 
-struct wkn_client *wkn_client_create(
+struct wkn_xdg_surface *wkn_xdg_surface_create(
 	struct wkn_server *server,
 	struct wlr_xdg_surface *wlr_xdg_surface
 );
-void wkn_client_focus(struct wkn_client *client);
-void wkn_client_destroy(struct wkn_client *client);
+void wkn_xdg_surface_focus(struct wkn_xdg_surface *xdg_surface);
+void wkn_xdg_surface_destroy(struct wkn_xdg_surface *xdg_surface);
 
 #endif

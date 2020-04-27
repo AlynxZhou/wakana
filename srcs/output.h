@@ -9,6 +9,8 @@
 #include <wlr/types/wlr_output_damage.h>
 #include "wakana.h"
 #include "server.h"
+#include "xdg-surface.h"
+#include "layer-surface.h"
 
 #define LAYER_NUMBER 4
 
@@ -20,7 +22,7 @@ struct wkn_output {
 	struct wl_listener frame;
 	struct wl_listener damage_frame;
 	struct wl_list layer_surfaces[LAYER_NUMBER];
-	struct wl_list clients;
+	struct wl_list xdg_surfaces;
 	// wl_list requires this for item.
 	struct wl_list link;
 };
@@ -29,7 +31,7 @@ void wkn_output_arrange_layer_surfaces(
 	struct wkn_output *output,
 	enum zwlr_layer_shell_v1_layer layer
 );
-struct wkn_client *wkn_output_find_client_at(
+struct wkn_xdg_surface *wkn_output_find_xdg_surface_at(
 	struct wkn_output *output,
 	int layout_x,
 	int layout_y

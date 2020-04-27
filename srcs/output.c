@@ -88,7 +88,7 @@ static void wkn_output_destroy_notify(struct wl_listener *listener, void *data)
 struct render_data {
 	struct wkn_server *server;
 	struct wkn_output *output;
-	struct wkn_client *client;
+	struct wkn_xdg_surface *xdg_surface;
 	struct timespec *when;
 };
 // A callback.
@@ -102,7 +102,7 @@ static void wkn_output_render_surface(
 	struct render_data *rdata = data;
 	struct wkn_server *server = rdata->server;
 	struct wkn_output *output = rdata->output;
-	struct wkn_client *client = rdata->client;
+	struct wkn_xdg_surface *xdg_surface = rdata->xdg_surface;
 
 	struct wlr_texture *wlr_texture = wlr_surface_get_texture(wlr_surface);
 	if (!wlr_texture) {
@@ -120,8 +120,8 @@ static void wkn_output_render_surface(
 
 	// Not a real hidpi support, just a dummy implemention.
 	struct wlr_box render_box = {
-		.x = (layout_x + client->rect.x + surface_x) * output->wlr_output->scale,
-		.y = (layout_y + client->rect.y + surface_y) * output->wlr_output->scale,
+		.x = (layout_x + xdg_surface->rect.x + surface_x) * output->wlr_output->scale,
+		.y = (layout_y + xdg_surface->rect.y + surface_y) * output->wlr_output->scale,
 		.width = wlr_surface->current.width * output->wlr_output->scale,
 		.height = wlr_surface->current.height * output->wlr_output->scale
 	};
@@ -243,18 +243,18 @@ static void wkn_output_frame_notify(struct wl_listener *listener, void *data)
 		wkn_output_render_layer_surface(layer_surface, &now);
 	}
 
-	struct wkn_client *client;
-	wl_list_for_each_reverse(client, &output->clients, link) {
-		if (!client->mapped)
+	struct wkn_xdg_surface *xdg_surface;
+	wl_list_for_each_reverse(xdg_surface, &output->xdg_surfaces, link) {
+		if (!xdg_surface->mapped)
 			continue;
 		struct render_data rdata = {
 			.server = server,
 			.output = output,
-			.client = client,
+			.xdg_surface = xdg_surface,
 			.when = &now
 		};
 		wlr_xdg_surface_for_each_surface(
-			client->wlr_xdg_surface,
+			xdg_surface->wlr_xdg_surface,
 			wkn_output_render_surface,
 			&rdata
 		);
@@ -286,16 +286,16 @@ static void wkn_output_frame_notify(struct wl_listener *listener, void *data)
 	wlr_output_commit(wlr_output);
 }
 
-struct wkn_client *wkn_output_find_client_at(
+struct wkn_xdg_surface *wkn_output_find_xdg_surface_at(
 	struct wkn_output *output,
 	int layout_x,
 	int layout_y
 )
 {
-	struct wkn_client *client;
-	wl_list_for_each(client, &output->clients, link) {
-		double client_relative_x = layout_x - client->rect.x;
-		double client_relative_y = layout_y - client->rect.y;
+	struct wkn_xdg_surface *xdg_surface;
+	wl_list_for_each(xdg_surface, &output->xdg_surfaces, link) {
+		double xdg_surface_relative_x = layout_x - xdg_surface->rect.x;
+		double xdg_surface_relative_y = layout_y - xdg_surface->rect.y;
 		// Ugly api needs this...I don't need them.
 		// I have submitted a PR to prevent wlr_xdg_surface_surface_at to assign it when passing NULL.
 		// It has been merged.
@@ -303,14 +303,14 @@ struct wkn_client *wkn_output_find_client_at(
 		double _sx;
 		double _sy;
 		struct wlr_surface *wlr_surface = wlr_xdg_surface_surface_at(
-			client->wlr_xdg_surface,
-			client_relative_x,
-			client_relative_y,
+			xdg_surface->wlr_xdg_surface,
+			xdg_surface_relative_x,
+			xdg_surface_relative_y,
 			&_sx,
 			&_sy
 		);
 		if (wlr_surface != NULL)
-			return client;
+			return xdg_surface;
 	}
 	return NULL;
 }
@@ -332,7 +332,7 @@ struct wkn_output *wkn_output_create(
 	wl_signal_add(&wlr_output->events.frame, &output->frame);
 	output->damage_frame.notify = wkn_output_damage_frame_notify;
 	wl_signal_add(&output->damage->events.frame, &output->damage_frame);
-	wl_list_init(&output->clients);
+	wl_list_init(&output->xdg_surfaces);
 	for (int i = 0; i < LAYER_NUMBER; ++i)
 		wl_list_init(&output->layer_surfaces[i]);
 	return output;
@@ -342,12 +342,12 @@ void wkn_output_destroy(struct wkn_output *output)
 {
 	if (!output)
 		return;
-	if (!wl_list_empty(&output->clients)) {
-		struct wkn_client *client;
-		struct wkn_client *tmp;
-		wl_list_for_each_safe(client, tmp, &output->clients, link) {
-			wl_list_remove(&client->link);
-			wkn_client_destroy(client);
+	if (!wl_list_empty(&output->xdg_surfaces)) {
+		struct wkn_xdg_surface *xdg_surface;
+		struct wkn_xdg_surface *tmp;
+		wl_list_for_each_safe(xdg_surface, tmp, &output->xdg_surfaces, link) {
+			wl_list_remove(&xdg_surface->link);
+			wkn_xdg_surface_destroy(xdg_surface);
 		}
 	}
 	free(output);
