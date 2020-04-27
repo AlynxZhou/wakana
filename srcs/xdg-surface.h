@@ -11,7 +11,6 @@
 
 struct wkn_xdg_surface {
 	struct wkn_server *server;
-	struct wkn_output *output;
 	struct wlr_xdg_surface *wlr_xdg_surface;
 	struct wlr_xdg_toplevel *wlr_xdg_toplevel;
 	struct wl_listener map;

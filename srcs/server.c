@@ -70,16 +70,7 @@ static void wkn_server_new_xdg_surface_notify(
 		server,
 		wlr_xdg_surface
 	);
-	if (wl_list_empty(&server->outputs))
-		return;
-	// Attach to the first output.
-	struct wkn_output *output = wl_container_of(
-		server->outputs.next,
-		output,
-		link
-	);
-	xdg_surface->output = output;
-	wl_list_insert(&output->xdg_surfaces, &xdg_surface->link);
+	wl_list_insert(&server->xdg_surfaces, &xdg_surface->link);
 }
 
 static void wkn_server_new_layer_surface_notify(
@@ -237,18 +228,27 @@ struct wkn_xdg_surface *wkn_server_find_xdg_surface_at(
 	int layout_y
 )
 {
-	struct wkn_xdg_surface *xdg_surface = NULL;
-	struct wkn_output *output;
-	wl_list_for_each(output, &server->outputs, link) {
-		xdg_surface = wkn_output_find_xdg_surface_at(
-			output,
-			layout_x,
-			layout_y
+	struct wkn_xdg_surface *xdg_surface;
+	wl_list_for_each(xdg_surface, &server->xdg_surfaces, link) {
+		double xdg_surface_relative_x = layout_x - xdg_surface->rect.x;
+		double xdg_surface_relative_y = layout_y - xdg_surface->rect.y;
+		// Ugly api needs this...I don't need them.
+		// I have submitted a PR to prevent wlr_xdg_surface_surface_at to assign it when passing NULL.
+		// It has been merged.
+		// TODO: Use NULL when wlroots updated.
+		double _sx;
+		double _sy;
+		struct wlr_surface *wlr_surface = wlr_xdg_surface_surface_at(
+			xdg_surface->wlr_xdg_surface,
+			xdg_surface_relative_x,
+			xdg_surface_relative_y,
+			&_sx,
+			&_sy
 		);
-		if (xdg_surface != NULL)
-			break;
+		if (wlr_surface != NULL)
+			return xdg_surface;
 	}
-	return xdg_surface;
+	return NULL;
 }
 
 struct wkn_server *wkn_server_create(void)
@@ -318,6 +318,7 @@ void wkn_server_setup(
 		&server->new_output
 	);
 
+	wl_list_init(&server->xdg_surfaces);
 	server->new_xdg_surface.notify = wkn_server_new_xdg_surface_notify;
 	wl_signal_add(
 		&server->wlr_xdg_shell->events.new_surface,
@@ -375,8 +376,24 @@ void wkn_server_destroy(struct wkn_server *server)
 	}
 	if (!wl_list_empty(&server->keyboards)) {
 		struct wkn_keyboard *keyboard;
-		wl_list_for_each(keyboard, &server->keyboards, link)
+		struct wkn_keyboard *tmp;
+		wl_list_for_each_safe(keyboard, tmp, &server->keyboards, link) {
+			wl_list_remove(&tmp->link);
 			wkn_keyboard_destroy(keyboard);
+		}
 	}
+	if (!wl_list_empty(&server->xdg_surfaces)) {
+			struct wkn_xdg_surface *xdg_surface;
+			struct wkn_xdg_surface *tmp;
+			wl_list_for_each_safe(
+				xdg_surface,
+				tmp,
+				&server->xdg_surfaces,
+				link
+			) {
+				wl_list_remove(&xdg_surface->link);
+				wkn_xdg_surface_destroy(xdg_surface);
+			}
+		}
 	free(server);
 }

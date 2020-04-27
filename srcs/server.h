@@ -39,6 +39,7 @@ struct wkn_server {
 	uint32_t request_resize_edges;
 	struct wl_list outputs;
 	struct wl_list keyboards;
+	struct wl_list xdg_surfaces;
 	struct wl_listener new_input;
 	struct wl_listener new_output;
 	struct wl_listener new_xdg_surface;

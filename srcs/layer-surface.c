@@ -2,14 +2,6 @@
 #include <stdlib.h>
 #include "layer-surface.h"
 
-void wkn_layer_surface_new_popup_notify(
-	struct wl_listener *listener,
-	void *data
-)
-{
-
-}
-
 void wkn_layer_surface_unmap_notify(struct wl_listener *listener, void *data)
 {
 	struct wkn_layer_surface *layer_surface = wl_container_of(
@@ -71,9 +63,6 @@ struct wkn_layer_surface *wkn_layer_surface_create(
 	wl_signal_add(&wlr_layer_surface->events.map, &layer_surface->map);
 	layer_surface->unmap.notify = wkn_layer_surface_unmap_notify;
 	wl_signal_add(&wlr_layer_surface->events.unmap, &layer_surface->unmap);
-	// layer_surface->new_popup.notify = wkn_layer_surface_new_popup_notify;
-	// wl_signal_add(&wlr_layer_surface->events.new_popup, &layer_surface->new_popup);
-
 	return layer_surface;
 }
 
@@ -81,5 +70,7 @@ void wkn_layer_surface_destroy(struct wkn_layer_surface *layer_surface)
 {
 	if (!layer_surface)
 		return;
+	if (layer_surface->wlr_layer_surface)
+		wlr_layer_surface_v1_close(layer_surface->wlr_layer_surface);
 	free(layer_surface);
 }

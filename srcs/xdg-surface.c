@@ -12,7 +12,6 @@ void wkn_xdg_surface_focus(struct wkn_xdg_surface *xdg_surface)
 		return;
 
 	struct wkn_server *server = xdg_surface->server;
-	struct wkn_output *output = xdg_surface->output;
 	struct wkn_seat *seat = server->seat;
 	struct wlr_surface *prev_wlr_surface =
 		seat->wlr_seat->keyboard_state.focused_surface;
@@ -24,10 +23,12 @@ void wkn_xdg_surface_focus(struct wkn_xdg_surface *xdg_surface)
 			wlr_xdg_surface_from_wlr_surface(prev_wlr_surface),
 			false
 		);
-	struct wlr_keyboard *wlr_keyboard = wlr_seat_get_keyboard(seat->wlr_seat);
+	struct wlr_keyboard *wlr_keyboard = wlr_seat_get_keyboard(
+		seat->wlr_seat
+	);
 	// You are focused! Go to top!
 	wl_list_remove(&xdg_surface->link);
-	wl_list_insert(&output->xdg_surfaces, &xdg_surface->link);
+	wl_list_insert(&server->xdg_surfaces, &xdg_surface->link);
 	wlr_xdg_toplevel_set_activated(xdg_surface->wlr_xdg_surface, true);
 	wlr_seat_keyboard_notify_enter(
 		seat->wlr_seat,
@@ -53,8 +54,6 @@ static void wkn_xdg_surface_request(
 		return;
 	server->focused_xdg_surface = xdg_surface;
 	server->cursor->state = cursor_state;
-	struct wlr_box geo_box;
-	wlr_xdg_surface_get_geometry(xdg_surface->wlr_xdg_surface, &geo_box);
 	switch (cursor_state) {
 	case WKN_CURSOR_MOVE:
 		server->request_cursor_x = cursor->wlr_cursor->x;
@@ -67,8 +66,8 @@ static void wkn_xdg_surface_request(
 		server->request_cursor_y = cursor->wlr_cursor->y;
 		server->request_rect.x = xdg_surface->rect.x;
 		server->request_rect.y = xdg_surface->rect.y;
-		server->request_rect.w = geo_box.width;
-		server->request_rect.h = geo_box.height;
+		server->request_rect.w = xdg_surface->rect.w;
+		server->request_rect.h = xdg_surface->rect.h;
 		server->request_resize_edges = edges;
 		break;
 	default:
@@ -144,11 +143,9 @@ static void wkn_xdg_surface_request_maximize_notify(
 		request_maximize
 	);
 	struct wkn_server *server = xdg_surface->server;
-	struct wkn_output *output = xdg_surface->output;
 
 	if (!xdg_surface->mapped)
 		return;
-
 
 	if (!xdg_surface->maximized) {
 		// Going maximized, save state.
@@ -156,15 +153,24 @@ static void wkn_xdg_surface_request_maximize_notify(
 
 		xdg_surface->prev_rect = xdg_surface->rect;
 
-		int w;
-		int h;
-		wlr_output_effective_resolution(output->wlr_output, &w, &h);
-
-		xdg_surface->rect.x = 0;
-		xdg_surface->rect.y = 0;
-		xdg_surface->rect.w = w;
-		xdg_surface->rect.h = h;
-		wlr_xdg_toplevel_set_size(xdg_surface->wlr_xdg_surface, w, h);
+		struct wlr_output *wlr_output = wlr_output_layout_output_at(
+			server->wlr_output_layout,
+			xdg_surface->rect.x,
+			xdg_surface->rect.y
+		);
+		struct wlr_box *output_rect = wlr_output_layout_get_box(
+			server->wlr_output_layout,
+			wlr_output
+		);
+		xdg_surface->rect.x = output_rect->x;
+		xdg_surface->rect.y = output_rect->y;
+		xdg_surface->rect.w = output_rect->width;
+		xdg_surface->rect.h = output_rect->height;
+		wlr_xdg_toplevel_set_size(
+			xdg_surface->wlr_xdg_surface,
+			xdg_surface->rect.w,
+			xdg_surface->rect.h
+		);
 	} else {
 		// Going unmaximized, load state.
 		wkn_logger_debug(server->logger, "Unmaximize!\n");
@@ -297,5 +303,7 @@ void wkn_xdg_surface_destroy(struct wkn_xdg_surface *xdg_surface)
 {
 	if (!xdg_surface)
 		return;
+	if (xdg_surface->wlr_xdg_surface)
+		wlr_xdg_toplevel_send_close(xdg_surface->wlr_xdg_surface);
 	free(xdg_surface);
 }
