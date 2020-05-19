@@ -60,8 +60,6 @@ void wkn_print_help(const char *program_name)
 
 int main(int argc, char *argv[])
 {
-	wlr_log_init(WLR_DEBUG, NULL);
-
 	struct option long_options[] = {
 		{"help", no_argument, NULL, 'h'},
 #ifdef __DEBUG__

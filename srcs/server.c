@@ -152,6 +152,7 @@ void wkn_server_move_focused_xdg_surface(struct wkn_server *server)
 	int dy = server->request_cursor_y - cursor->wlr_cursor->y;
 	xdg_surface->rect.x = server->request_rect.x - dx;
 	xdg_surface->rect.y = server->request_rect.y - dy;
+	// TODO: Send enter and leave events to wl_surface.
 }
 
 void wkn_server_resize_focused_xdg_surface(struct wkn_server *server)
@@ -185,6 +186,7 @@ void wkn_server_resize_focused_xdg_surface(struct wkn_server *server)
 	wlr_xdg_toplevel_set_size(xdg_surface->wlr_xdg_surface, rect.w, rect.h);
 	// Better to wait for the xdg_surface's redrawing then do recompositing.
 	xdg_surface->rect = rect;
+	// TODO: Send enter and leave events to wl_surface.
 }
 
 void wkn_server_update_keys(
